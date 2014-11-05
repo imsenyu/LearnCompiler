@@ -19,25 +19,35 @@ using namespace std;
 
  *
  */
+enum finishElement {_ID=1001,_NUM,_OPERATOR};
+enum tokenType { _NVAL=1, _AVAL, _RELOP};
 struct DFA_Trans {
     int sfrom;
     char ch;
     int sto;
+    bool ignore;
 };
 
 struct DFA_RestTrans {
     int sfrom;
     int sto;
-    bool predcate;
 };
 
 struct DFA_StateId {
     int sta;
+    finishElement to;
+};
+
+struct DFA_Token {
+    finishElement f;
+    int id;
+    string token;
+    tokenType type;
 };
 
 DFA_Trans m_DFA_Trans[] = {
     /*空格换行*/
-    {0,' ',0},{0,'\n',0},
+    {0,' ',0,true},{0,'\n',0,true},{0,'\r',0,true},
     /*字母*/
     {0,'a',1},{0,'b',1},{0,'c',1},{0,'d',1},{0,'e',1},{0,'f',1},{0,'g',1},{0,'h',1},{0,'i',1},{0,'j',1},{0,'k',1},{0,'l',1},{0,'m',1},{0,'n',1},{0,'o',1},{0,'p',1},{0,'q',1},{0,'r',1},{0,'s',1},{0,'t',1},{0,'u',1},{0,'v',1},{0,'w',1},{0,'x',1},{0,'y',1},{0,'z',1},
     {0,'A',1},{0,'B',1},{0,'C',1},{0,'D',1},{0,'E',1},{0,'F',1},{0,'G',1},{0,'H',1},{0,'I',1},{0,'J',1},{0,'K',1},{0,'L',1},{0,'M',1},{0,'N',1},{0,'O',1},{0,'P',1},{0,'Q',1},{0,'R',1},{0,'S',1},{0,'T',1},{0,'U',1},{0,'V',1},{0,'W',1},{0,'X',1},{0,'Y',1},{0,'Z',1},
@@ -54,11 +64,22 @@ DFA_Trans m_DFA_Trans[] = {
     {6,'=',7},{0,'=',9},{9,'=',10}
 };
 DFA_RestTrans m_DFA_RestTrans[] = {
-    {1,2,true},{3,4,true},{6,8,true},{9,11,true}
+    {1,2},{3,4},{6,8},{9,11}
 };
 DFA_StateId m_DFA_FinishState[] = {
-    {2},{4},{5},{7},{8},{10},{11}
+    {2,_ID},{4,_NUM},{5,_OPERATOR},{7,_OPERATOR},{8,_OPERATOR},{10,_OPERATOR},{11,_OPERATOR}
 };
+DFA_Token m_DFA_Token[] = {
+    {_ID, 1, "int", 1},
+    {_ID, 2, "if", 1},
+    {_ID, 7, "ID", 2},
+    {_NUM, 8, "NUM", 2},
+    {_OPERATOR, 9, "+", 1},
+    {_OPERATOR, 10, "-", 1},
+    {_OPERATOR, 15, "<", 3},
+    {_OPERATOR, 15, ">", 3}
+};
+
 vector<DFA_Trans> v_DFA_Trans( m_DFA_Trans, m_DFA_Trans+sizeof(m_DFA_Trans)/sizeof(m_DFA_Trans[0]) );
 vector<DFA_RestTrans> v_DFA_RestTrans( m_DFA_RestTrans, m_DFA_RestTrans+sizeof(m_DFA_RestTrans)/sizeof(m_DFA_RestTrans[0]) );
 vector<DFA_StateId> v_DFA_FinishState( m_DFA_FinishState, m_DFA_FinishState+sizeof(m_DFA_FinishState)/sizeof(m_DFA_FinishState[0]) );
@@ -72,12 +93,13 @@ public:
 
 private:
     int (* trans)[256];
-    map<int, int> finish;
+    map<int, finishElement> finish;
     int maxStates;
     int startState;
     int currentState;
     template<typename T> int getMaxStateId(T &);
     bool hasFinish(int);
+    void OutputToken(const string &, finishElement);
 };
 template<typename T>
 int DFA::getMaxStateId(T &m) {
@@ -119,7 +141,7 @@ DFA& DFA::initTrans(vector<DFA_Trans> &m, vector<DFA_RestTrans> &r) {
 DFA& DFA::initFinish(vector<DFA_StateId> &f) {
     finish.clear();
     for( vector<DFA_StateId>::iterator itr = f.begin(); itr!=f.end(); itr++) {
-        finish.insert(pair<int,int>(itr->sta,1));
+        finish.insert(pair<int,finishElement>(itr->sta,itr->to));
     }
     return *this;
 }
@@ -134,25 +156,25 @@ DFA& DFA::run() {
     string buffer = "";
 
     while(runnable) {
-        if (inputable) {
-            if(scanf("%c",&input) == EOF) break;
-            //cout<<"READ"<<input<<endl;
+        if (inputable && scanf("%c",&input) == EOF) {
+            break;
         }
-
         inputable = true;
         int next = trans[currentState][input];
-        //cout<<currentState<<"->"<<input<<"->"<<next<<endl;
+        //非法字符
         if ( next == -1 ) {
                 runnable = false;
             cout<<"ERROR"<<endl;
         }
+        //空白循环?还有点问题，应该是忽略一开始的 空格的
         else if ( next == 0 ) {
 
         }
         else if ( next >0 ) {
             buffer += input;
             if ( hasFinish(next) ) {
-                cout<<"end"<<next<<" "<<buffer<<endl;
+                cout<<"end"<<next;
+                OutputToken(buffer, finish.find(next)->second);
                 buffer = "";
                 currentState = 0;
             }
@@ -164,7 +186,8 @@ DFA& DFA::run() {
         else if ( next < 0 ) {
             inputable = false;
             if ( hasFinish(-next-2) ) {
-                cout<<"end"<<(-next-2)<<" "<<buffer<<endl;
+                cout<<"end"<<(-next-2);
+                OutputToken(buffer, finish.find(-next-2)->second);
                 buffer = "";
                 currentState = 0;
             }
@@ -177,6 +200,21 @@ DFA& DFA::run() {
     return *this;
 }
 
+void DFA::OutputToken(const string &buf, finishElement f) {
+
+    switch(f) {
+    case _ID:
+        cout<<" ID "<<buf<<endl;
+        break;
+    case _NUM:
+        cout<<" NUM "<<buf<<endl;
+        break;
+    case _OPERATOR:
+        cout<<" OP "<<buf<<endl;
+        break;
+    }
+}
+
 int main()
 {
     freopen("in.txt","r",stdin);
@@ -185,5 +223,8 @@ int main()
       initTrans(v_DFA_Trans, v_DFA_RestTrans).
       initFinish(v_DFA_FinishState).
       run();
+
+
+
     return 0;
 }
