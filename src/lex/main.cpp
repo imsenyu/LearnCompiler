@@ -107,8 +107,9 @@ DFA& DFA::initTrans(vector<DFA_Trans> &m, vector<DFA_RestTrans> &r) {
     for(vector<DFA_RestTrans>::iterator itr = r.begin(); itr!=r.end(); itr++) {
         DFA_RestTrans &p = *itr;
         for(int ch = 0; ch<256; ch++) {
-            if ( trans[p.sfrom][ch] == -1 ) {
-                trans[p.sfrom][ch] = p.predcate ? (-p.sto - 2) : p.sto;
+            //if ( ch == ' ' || ch == '\n' || ch == '\r' ) continue;
+            if ( trans[p.sfrom][ch] == -1) {
+                trans[p.sfrom][ch] = -p.sto - 2;
             }
         }
     }
@@ -133,18 +134,30 @@ DFA& DFA::run() {
     string buffer = "";
 
     while(runnable) {
-        if (inputable) scanf("%c",&input);
+        if (inputable) {
+            if(scanf("%c",&input) == EOF) break;
+            //cout<<"READ"<<input<<endl;
+        }
+
         inputable = true;
         int next = trans[currentState][input];
+        //cout<<currentState<<"->"<<input<<"->"<<next<<endl;
         if ( next == -1 ) {
                 runnable = false;
             cout<<"ERROR"<<endl;
+        }
+        else if ( next == 0 ) {
+
         }
         else if ( next >0 ) {
             buffer += input;
             if ( hasFinish(next) ) {
                 cout<<"end"<<next<<" "<<buffer<<endl;
                 buffer = "";
+                currentState = 0;
+            }
+            else {
+                currentState = next;
             }
             //继续扫描
         }
@@ -153,6 +166,10 @@ DFA& DFA::run() {
             if ( hasFinish(-next-2) ) {
                 cout<<"end"<<(-next-2)<<" "<<buffer<<endl;
                 buffer = "";
+                currentState = 0;
+            }
+            else {
+                currentState = next;
             }
         }
 
@@ -162,7 +179,7 @@ DFA& DFA::run() {
 
 int main()
 {
-
+    freopen("in.txt","r",stdin);
     DFA dfa;
     dfa.
       initTrans(v_DFA_Trans, v_DFA_RestTrans).

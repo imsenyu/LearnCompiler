@@ -1,0 +1,8 @@
+# depslib dependency file v1.0
+1415202207 source:e:\workspace\git\homework\src\lex\main.cpp
+	<cstdio>
+	<iostream>
+	<vector>
+	<map>
+	<string>
+

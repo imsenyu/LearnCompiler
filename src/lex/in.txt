@@ -1,0 +1,6 @@
+   {
+       int a; int b;
+          a=10;
+          if (a>0) then b=a
+       }
+
