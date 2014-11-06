@@ -136,6 +136,7 @@ class DFA {
         DFA& initTrans(vector<DFA_Trans> &, vector<DFA_RestTrans> &);
         DFA& initStart(int s) {
             startState = s;
+            return *this;
         }
         DFA& initFinish(vector<DFA_StateId> &);
         DFA& initToken(vector<DFA_Token> &);
