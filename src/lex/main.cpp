@@ -20,7 +20,8 @@ using namespace std;
  *
  */
 enum finishElement {_ID=1001,_NUM,_OPERATOR};
-enum tokenType { _NVAL=1, _AVAL, _RELOP};
+enum tokenType { NVAL=1, AVAL, RELOP};
+
 struct DFA_Trans {
     int sfrom;
     char ch;
@@ -70,20 +71,28 @@ DFA_StateId m_DFA_FinishState[] = {
     {2,_ID},{4,_NUM},{5,_OPERATOR},{7,_OPERATOR},{8,_OPERATOR},{10,_OPERATOR},{11,_OPERATOR}
 };
 DFA_Token m_DFA_Token[] = {
-    {_ID, 1, "int", 1},
-    {_ID, 2, "if", 1},
-    {_ID, 7, "ID", 2},
-    {_NUM, 8, "NUM", 2},
-    {_OPERATOR, 9, "+", 1},
-    {_OPERATOR, 10, "-", 1},
-    {_OPERATOR, 15, "<", 3},
-    {_OPERATOR, 15, ">", 3}
+    {_ID, 1, "int", NVAL},
+    {_ID, 2, "if", NVAL},
+    {_ID, 7, "ID", AVAL},
+    {_NUM, 8, "NUM", AVAL},
+    {_OPERATOR, 9, "+", NVAL},
+    {_OPERATOR, 10, "-", NVAL},
+    {_OPERATOR, 15, "<", RELOP},
+    {_OPERATOR, 15, ">", RELOP}
 };
 
 vector<DFA_Trans> v_DFA_Trans( m_DFA_Trans, m_DFA_Trans+sizeof(m_DFA_Trans)/sizeof(m_DFA_Trans[0]) );
 vector<DFA_RestTrans> v_DFA_RestTrans( m_DFA_RestTrans, m_DFA_RestTrans+sizeof(m_DFA_RestTrans)/sizeof(m_DFA_RestTrans[0]) );
 vector<DFA_StateId> v_DFA_FinishState( m_DFA_FinishState, m_DFA_FinishState+sizeof(m_DFA_FinishState)/sizeof(m_DFA_FinishState[0]) );
 class DFA {
+public:
+    enum charValid {NORMAL=1,ERROR,PREDICATE};
+private:
+	struct DFAK{
+		int state;
+		charValid valid;
+		bool ignore;
+	};
 public:
     DFA():trans(NULL),maxStates(0),startState(0) {}
     DFA& initTrans(vector<DFA_Trans> &, vector<DFA_RestTrans> &);
@@ -92,7 +101,7 @@ public:
     DFA& run();
 
 private:
-    int (* trans)[256];
+    DFAK (* trans)[256];
     map<int, finishElement> finish;
     int maxStates;
     int startState;
@@ -100,6 +109,7 @@ private:
     template<typename T> int getMaxStateId(T &);
     bool hasFinish(int);
     void OutputToken(const string &, finishElement);
+
 };
 template<typename T>
 int DFA::getMaxStateId(T &m) {
@@ -115,23 +125,25 @@ DFA& DFA::initTrans(vector<DFA_Trans> &m, vector<DFA_RestTrans> &r) {
 
 
     int maxStates = getMaxStateId< vector<DFA_Trans> >(m);
-    trans = new int[ maxStates+1 ][256];
+    trans = new DFAK[ maxStates+1 ][256];
 
     for(int state = 0; state<maxStates; state++) {
         for(int ch = 0; ch<256; ch++) {
-            trans[state][ch] = -1;
+            trans[state][ch].valid = ERROR;
         }
     }
     for(vector<DFA_Trans>::iterator itr = m.begin(); itr!=m.end(); itr++) {
         DFA_Trans &p = *itr;
-        trans[p.sfrom][p.ch] = p.sto;
+        trans[p.sfrom][p.ch].valid = NORMAL;
+        trans[p.sfrom][p.ch].ignore = p.ignore;
+        trans[p.sfrom][p.ch].state = p.sto;
     }
     for(vector<DFA_RestTrans>::iterator itr = r.begin(); itr!=r.end(); itr++) {
         DFA_RestTrans &p = *itr;
         for(int ch = 0; ch<256; ch++) {
-            //if ( ch == ' ' || ch == '\n' || ch == '\r' ) continue;
-            if ( trans[p.sfrom][ch] == -1) {
-                trans[p.sfrom][ch] = -p.sto - 2;
+            if ( trans[p.sfrom][ch].valid == ERROR) {
+                trans[p.sfrom][ch].valid = PREDICATE;
+                trans[p.sfrom][ch].state = p.sto;
             }
         }
     }
@@ -160,39 +172,36 @@ DFA& DFA::run() {
             break;
         }
         inputable = true;
-        int next = trans[currentState][input];
+        DFAK next = trans[currentState][input];
         //非法字符
-        if ( next == -1 ) {
+        if ( next.valid == ERROR ) {
                 runnable = false;
             cout<<"ERROR"<<endl;
         }
-        //空白循环?还有点问题，应该是忽略一开始的 空格的
-        else if ( next == 0 ) {
 
-        }
-        else if ( next >0 ) {
-            buffer += input;
-            if ( hasFinish(next) ) {
-                cout<<"end"<<next;
-                OutputToken(buffer, finish.find(next)->second);
+        else if ( next.valid == NORMAL ) {
+            if ( !next.ignore )buffer += input;
+            if ( hasFinish(next.state) ) {
+                cout<<"end"<<next.state;
+                OutputToken(buffer, finish.find(next.state)->second);
                 buffer = "";
-                currentState = 0;
+                currentState = startState;
             }
             else {
-                currentState = next;
+                currentState = next.state;
             }
             //继续扫描
         }
-        else if ( next < 0 ) {
+        else if ( next.valid == PREDICATE ) {
             inputable = false;
-            if ( hasFinish(-next-2) ) {
-                cout<<"end"<<(-next-2);
-                OutputToken(buffer, finish.find(-next-2)->second);
+            if ( hasFinish(next.state) ) {
+                cout<<"end"<<(next.state);
+                OutputToken(buffer, finish.find(next.state)->second);
                 buffer = "";
-                currentState = 0;
+                currentState = startState;
             }
             else {
-                currentState = next;
+                currentState = next.state;
             }
         }
 
