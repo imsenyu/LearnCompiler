@@ -1,8 +1,8 @@
 /**
  * @fileoverview lex
- * @author 郁森<senyu@mail.dlut.edu.cn>
+ * @author 郁森<senyu@mail.dlut.edu.cn>/一杉<yusen.ys@alibaba-inc.com>
  * @language C++
- * @description Compiler-LEX
+ * @description Compiler-基于DFA的简易词法分析器实现
  */
 #include <cstdio>
 #include <iostream>
@@ -22,7 +22,7 @@ using namespace std;
  *
  */
 
-enum finishElement {_ID=1,_NUM,_OPERATOR};
+enum finishElement {T_ID=1,T_NUM,T_OP};
 enum tokenType { NVAL=1, AVAL, RELOP};
 
 struct DFA_Trans {
@@ -71,7 +71,7 @@ DFA_RestTrans m_DFA_RestTrans[] = {
     {1,2},{3,4},{6,8},{9,11}
 };
 DFA_StateId m_DFA_FinishState[] = {
-    {2,_ID},{4,_NUM},{5,_OPERATOR},{7,_OPERATOR},{8,_OPERATOR},{10,_OPERATOR},{11,_OPERATOR}
+    {2,T_ID},{4,T_NUM},{5,T_OP},{7,T_OP},{8,T_OP},{10,T_OP},{11,T_OP}
 };
 /*
  * 按照finishElement分组， 再按照NVAL分组， 然后做map
@@ -81,32 +81,32 @@ DFA_StateId m_DFA_FinishState[] = {
  剩下AVAL 加入另一个 map
  */
 DFA_Token m_DFA_Token[] = {
-    {_ID, 1, "int", NVAL},
-    {_ID, 2, "if", NVAL},
-    {_ID, 3, "then", NVAL},
-    {_ID, 4, "else", NVAL},
-    {_ID, 5, "while", NVAL},
-    {_ID, 6, "do", NVAL},
-    {_ID, 7, "ID", AVAL},
-    {_NUM, 8, "NUM", AVAL},
-    {_OPERATOR, 9, "+", NVAL},
-    {_OPERATOR, 10, "-", NVAL},
-    {_OPERATOR, 11, "*", NVAL},
-    {_OPERATOR, 12, "/", NVAL},
-    {_ID, 13, "and", NVAL},
-    {_ID, 14, "or", NVAL},
-    {_OPERATOR, 15, "<", RELOP},
-    {_OPERATOR, 15, ">", RELOP},
-    {_OPERATOR, 15, "<=", RELOP},
-    {_OPERATOR, 15, ">=", RELOP},
-    {_OPERATOR, 15, "!=", RELOP},
-    {_OPERATOR, 15, "==", RELOP},
-    {_OPERATOR, 16, "{", NVAL},
-    {_OPERATOR, 17, "}", NVAL},
-    {_OPERATOR, 18, ";", NVAL},
-    {_OPERATOR, 19, "(", NVAL},
-    {_OPERATOR, 20, ")", NVAL},
-    {_OPERATOR, 21, "=", NVAL}
+    {T_ID, 1, "int", NVAL},
+    {T_ID, 2, "if", NVAL},
+    {T_ID, 3, "then", NVAL},
+    {T_ID, 4, "else", NVAL},
+    {T_ID, 5, "while", NVAL},
+    {T_ID, 6, "do", NVAL},
+    {T_ID, 7, "ID", AVAL},
+    {T_NUM, 8, "NUM", AVAL},
+    {T_OP, 9, "+", NVAL},
+    {T_OP, 10, "-", NVAL},
+    {T_OP, 11, "*", NVAL},
+    {T_OP, 12, "/", NVAL},
+    {T_ID, 13, "and", NVAL},
+    {T_ID, 14, "or", NVAL},
+    {T_OP, 15, "<", RELOP},
+    {T_OP, 15, ">", RELOP},
+    {T_OP, 15, "<=", RELOP},
+    {T_OP, 15, ">=", RELOP},
+    {T_OP, 15, "!=", RELOP},
+    {T_OP, 15, "==", RELOP},
+    {T_OP, 16, "{", NVAL},
+    {T_OP, 17, "}", NVAL},
+    {T_OP, 18, ";", NVAL},
+    {T_OP, 19, "(", NVAL},
+    {T_OP, 20, ")", NVAL},
+    {T_OP, 21, "=", NVAL}
 };
 
 vector<DFA_Trans>       v_DFA_Trans( m_DFA_Trans, m_DFA_Trans+sizeof(m_DFA_Trans)/sizeof(m_DFA_Trans[0]) );
