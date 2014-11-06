@@ -2,5 +2,9 @@
        int a; int b;
           a=10;
           if (a>0) then b=a
+          else b=a-1
+          do
+            a = b +1;
+        while(a<=10 and a>5)
        }
 
