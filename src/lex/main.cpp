@@ -23,7 +23,7 @@ using namespace std;
  *
  */
 
-enum finishElement {_ID=1001,_NUM,_OPERATOR};
+enum finishElement {_ID=1,_NUM,_OPERATOR};
 enum tokenType { NVAL=1, AVAL, RELOP};
 
 struct DFA_Trans {
@@ -212,14 +212,18 @@ DFA& DFA::run() {
         }
         inputable = true;
         t_DFA_Trans next = trans[currentState][input];
-        //非法字符
-        if ( next.valid == ERROR ) {
-                runnable = false;
-            cout<<"ERROR"<<endl;
-        }
 
-        else if ( next.valid == NORMAL ) {
-            if ( !next.ignore )buffer += input;
+        if ( next.valid == ERROR ) {
+            runnable = false;
+            cout<<"ERROR Character ["<<input<<","<<(int)input<<"]"<<endl;
+        }
+        else if ( next.valid == NORMAL || next.valid == PREDICATE) {
+            if ( next.valid == NORMAL ) {
+                if ( !next.ignore )buffer += input;
+            }
+            else if ( next.valid == PREDICATE ) {
+                inputable = false;
+            }
             if ( hasFinish(next.state) ) {
                 //cout<<"end"<<next.state;
                 matchToken(buffer, finish.find(next.state)->second);
@@ -229,21 +233,7 @@ DFA& DFA::run() {
             else {
                 currentState = next.state;
             }
-            //继续扫描
         }
-        else if ( next.valid == PREDICATE ) {
-            inputable = false;
-            if ( hasFinish(next.state) ) {
-                //cout<<"end"<<(next.state);
-                matchToken(buffer, finish.find(next.state)->second);
-                buffer = "";
-                currentState = startState;
-            }
-            else {
-                currentState = next.state;
-            }
-        }
-
     }
     return *this;
 }
@@ -270,7 +260,13 @@ void DFA::matchToken(const string &buf, finishElement f) {
     map<finishElement,DFA_Token>::iterator itrA = token.A.find(f);
     if ( itrN != token.N.end() ) {
         DFA_Token &p = itrN->second;
-        cout<<"< "<<p.token<<" , "<<p.id<<" , "<<( p.type==RELOP ? "relop" : "_" )<<" >"<<endl;
+        if ( p.type == RELOP ) {
+            cout<<"< relop , "<<p.id<<" , "<<p.token<<" >"<<endl;
+        }
+        else {
+            cout<<"< "<<p.token<<" , "<<p.id<<" , _ >"<<endl;
+        }
+
     }
     else if ( itrA != token.A.end() ) {
         DFA_Token &p = itrA->second;
