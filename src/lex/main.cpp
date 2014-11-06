@@ -1,3 +1,9 @@
+/**
+ * @fileoverview lex
+ * @author 郁森<senyu@mail.dlut.edu.cn>
+ * @language C++
+ * @description Compiler-LEX
+ */
 #include <cstdio>
 #include <iostream>
 #include <vector>
@@ -14,9 +20,6 @@ using namespace std;
 2.   包括 othermap判定
 3.   每次读取完成结束状态则 重新开始0状态
 4. 把查找到的 标识符 1状态 进行 文本匹配，找出各种关键字
-
-
-
  *
  */
 
@@ -285,8 +288,6 @@ int main()
       initFinish(v_DFA_FinishState).
       initToken(v_DFA_Token).
       run();
-
-
 
     return 0;
 }
