@@ -19,6 +19,7 @@ using namespace std;
 
  *
  */
+
 enum finishElement {_ID=1001,_NUM,_OPERATOR};
 enum tokenType { NVAL=1, AVAL, RELOP};
 
@@ -70,45 +71,79 @@ DFA_RestTrans m_DFA_RestTrans[] = {
 DFA_StateId m_DFA_FinishState[] = {
     {2,_ID},{4,_NUM},{5,_OPERATOR},{7,_OPERATOR},{8,_OPERATOR},{10,_OPERATOR},{11,_OPERATOR}
 };
+/*
+ * 按照finishElement分组， 再按照NVAL分组， 然后做map
+
+ 或者
+ 把 finishElement & string 做 key把NVAL,RELOP的 全部加入map
+ 剩下AVAL 加入另一个 vector
+ */
 DFA_Token m_DFA_Token[] = {
     {_ID, 1, "int", NVAL},
     {_ID, 2, "if", NVAL},
+    {_ID, 3, "then", NVAL},
+    {_ID, 4, "else", NVAL},
+    {_ID, 5, "while", NVAL},
+    {_ID, 6, "do", NVAL},
     {_ID, 7, "ID", AVAL},
     {_NUM, 8, "NUM", AVAL},
     {_OPERATOR, 9, "+", NVAL},
     {_OPERATOR, 10, "-", NVAL},
+    {_OPERATOR, 11, "*", NVAL},
+    {_OPERATOR, 12, "/", NVAL},
+    {_ID, 13, "and", NVAL},
+    {_ID, 14, "or", NVAL},
     {_OPERATOR, 15, "<", RELOP},
-    {_OPERATOR, 15, ">", RELOP}
+    {_OPERATOR, 15, ">", RELOP},
+    {_OPERATOR, 15, "<=", RELOP},
+    {_OPERATOR, 15, ">=", RELOP},
+    {_OPERATOR, 15, "!=", RELOP},
+    {_OPERATOR, 15, "==", RELOP},
+    {_OPERATOR, 16, "{", NVAL},
+    {_OPERATOR, 17, "}", NVAL},
+    {_OPERATOR, 18, ";", NVAL},
+    {_OPERATOR, 19, "(", NVAL},
+    {_OPERATOR, 20, ")", NVAL},
+    {_OPERATOR, 21, "=", NVAL}
 };
 
-vector<DFA_Trans> v_DFA_Trans( m_DFA_Trans, m_DFA_Trans+sizeof(m_DFA_Trans)/sizeof(m_DFA_Trans[0]) );
-vector<DFA_RestTrans> v_DFA_RestTrans( m_DFA_RestTrans, m_DFA_RestTrans+sizeof(m_DFA_RestTrans)/sizeof(m_DFA_RestTrans[0]) );
-vector<DFA_StateId> v_DFA_FinishState( m_DFA_FinishState, m_DFA_FinishState+sizeof(m_DFA_FinishState)/sizeof(m_DFA_FinishState[0]) );
+vector<DFA_Trans>       v_DFA_Trans( m_DFA_Trans, m_DFA_Trans+sizeof(m_DFA_Trans)/sizeof(m_DFA_Trans[0]) );
+vector<DFA_RestTrans>   v_DFA_RestTrans( m_DFA_RestTrans, m_DFA_RestTrans+sizeof(m_DFA_RestTrans)/sizeof(m_DFA_RestTrans[0]) );
+vector<DFA_StateId>     v_DFA_FinishState( m_DFA_FinishState, m_DFA_FinishState+sizeof(m_DFA_FinishState)/sizeof(m_DFA_FinishState[0]) );
+vector<DFA_Token>       v_DFA_Token( m_DFA_Token, m_DFA_Token+sizeof(m_DFA_Token)/sizeof(m_DFA_Token[0]));
+
 class DFA {
 public:
     enum charValid {NORMAL=1,ERROR,PREDICATE};
 private:
-	struct DFAK{
+	struct t_DFA_Trans{
 		int state;
 		charValid valid;
 		bool ignore;
 	};
+	struct t_DFA_Token{
+        map<string, DFA_Token> N;
+        map<finishElement,DFA_Token> A;
+        void clear() { N.clear(); A.clear(); }
+    };
 public:
     DFA():trans(NULL),maxStates(0),startState(0) {}
     DFA& initTrans(vector<DFA_Trans> &, vector<DFA_RestTrans> &);
     DFA& initStart(int s) {startState = s;}
     DFA& initFinish(vector<DFA_StateId> &);
+    DFA& initToken(vector<DFA_Token> &);
     DFA& run();
 
 private:
-    DFAK (* trans)[256];
+    t_DFA_Trans (* trans)[256];
     map<int, finishElement> finish;
+    t_DFA_Token token;
     int maxStates;
     int startState;
     int currentState;
     template<typename T> int getMaxStateId(T &);
     bool hasFinish(int);
-    void OutputToken(const string &, finishElement);
+    void matchToken(const string &, finishElement);
 
 };
 template<typename T>
@@ -122,10 +157,10 @@ int DFA::getMaxStateId(T &m) {
     return ret;
 }
 DFA& DFA::initTrans(vector<DFA_Trans> &m, vector<DFA_RestTrans> &r) {
-
+    delete[] trans;
 
     int maxStates = getMaxStateId< vector<DFA_Trans> >(m);
-    trans = new DFAK[ maxStates+1 ][256];
+    trans = new t_DFA_Trans[ maxStates+1 ][256];
 
     for(int state = 0; state<maxStates; state++) {
         for(int ch = 0; ch<256; ch++) {
@@ -158,7 +193,8 @@ DFA& DFA::initFinish(vector<DFA_StateId> &f) {
     return *this;
 }
 bool DFA::hasFinish(int s) {
-    return finish.upper_bound(s)!=finish.lower_bound(s);
+    return finish.find(s) != finish.end();
+    //return finish.upper_bound(s)!=finish.lower_bound(s);
 }
 DFA& DFA::run() {
     char input;
@@ -172,7 +208,7 @@ DFA& DFA::run() {
             break;
         }
         inputable = true;
-        DFAK next = trans[currentState][input];
+        t_DFA_Trans next = trans[currentState][input];
         //非法字符
         if ( next.valid == ERROR ) {
                 runnable = false;
@@ -182,8 +218,8 @@ DFA& DFA::run() {
         else if ( next.valid == NORMAL ) {
             if ( !next.ignore )buffer += input;
             if ( hasFinish(next.state) ) {
-                cout<<"end"<<next.state;
-                OutputToken(buffer, finish.find(next.state)->second);
+                //cout<<"end"<<next.state;
+                matchToken(buffer, finish.find(next.state)->second);
                 buffer = "";
                 currentState = startState;
             }
@@ -195,8 +231,8 @@ DFA& DFA::run() {
         else if ( next.valid == PREDICATE ) {
             inputable = false;
             if ( hasFinish(next.state) ) {
-                cout<<"end"<<(next.state);
-                OutputToken(buffer, finish.find(next.state)->second);
+                //cout<<"end"<<(next.state);
+                matchToken(buffer, finish.find(next.state)->second);
                 buffer = "";
                 currentState = startState;
             }
@@ -209,19 +245,35 @@ DFA& DFA::run() {
     return *this;
 }
 
-void DFA::OutputToken(const string &buf, finishElement f) {
-
-    switch(f) {
-    case _ID:
-        cout<<" ID "<<buf<<endl;
-        break;
-    case _NUM:
-        cout<<" NUM "<<buf<<endl;
-        break;
-    case _OPERATOR:
-        cout<<" OP "<<buf<<endl;
-        break;
+DFA& DFA::initToken(vector<DFA_Token> &t) {
+    token.clear();
+    for(vector<DFA_Token>::iterator itr = t.begin();itr!=t.end();itr++) {
+        DFA_Token &p = *itr;
+        if ( p.type != AVAL ) {
+            token.N.insert( pair<string, DFA_Token>( p.token + "_" + (char)p.f , p ) );
+        }
+        else {
+            token.A.insert( pair<finishElement, DFA_Token>( p.f, p ) );
+        }
     }
+    return *this;
+}
+
+void DFA::matchToken(const string &buf, finishElement f) {
+
+    string tokenKey = buf + "_" + (char)f;
+
+    map<string, DFA_Token>::iterator itrN = token.N.find(tokenKey);
+    map<finishElement,DFA_Token>::iterator itrA = token.A.find(f);
+    if ( itrN != token.N.end() ) {
+        DFA_Token &p = itrN->second;
+        cout<<"< "<<p.token<<" , "<<p.id<<" , "<<( p.type==RELOP ? "relop" : "_" )<<" >"<<endl;
+    }
+    else if ( itrA != token.A.end() ) {
+        DFA_Token &p = itrA->second;
+        cout<<"< "<<p.token<<" , "<<p.id<<" , "<<buf<<" >"<<endl;
+    }
+
 }
 
 int main()
@@ -231,6 +283,7 @@ int main()
     dfa.
       initTrans(v_DFA_Trans, v_DFA_RestTrans).
       initFinish(v_DFA_FinishState).
+      initToken(v_DFA_Token).
       run();
 
 
