@@ -12,36 +12,46 @@
 
 using namespace std;
 
-/*
- *
-//TODO
-1. 由map确定的 读取字符并进入下一个状态的 自动函数
-2.   包括 othermap判定
-3.   每次读取完成结束状态则 重新开始0状态
-4. 把查找到的 标识符 1状态 进行 文本匹配，找出各种关键字
+/** //TODO:
+ * @description 具体算法描述
+1. 把struct数据导入二维数组中,由此构造DFA的状态转换表
+    1.1 转换表定义: 跳转项 + 预判定项 + 终止状态项
+    1.2 标识符定义: 关键字,标识
+2. 依次读取 输入流字符,按照转换表依次跳转
+3. 运行到终止状态后, 转入标识符判定,然后重置状态继续运行
+4. 每次判定完成标识符,输出对应词
  *
  */
 
 enum finishElement {T_ID=1,T_NUM,T_OP};
 enum tokenType { NVAL=1, AVAL, RELOP};
 
+/**
+ * @description 状态转换表跳转项结构
+ */
 struct DFA_Trans {
     int sfrom;
     char ch;
     int sto;
     bool ignore;
 };
-
+/**
+ * @description 状态转换表预判定项结构
+ */
 struct DFA_RestTrans {
     int sfrom;
     int sto;
 };
-
+/**
+ * @description 状态转换表终止状态项结构
+ */
 struct DFA_StateId {
     int sta;
     finishElement to;
 };
-
+/**
+ * @description 标识符识别结构
+ */
 struct DFA_Token {
     finishElement f;
     int id;
@@ -68,18 +78,12 @@ DFA_Trans m_DFA_Trans[] = {
     {6,'=',7},{0,'=',9},{9,'=',10}
 };
 DFA_RestTrans m_DFA_RestTrans[] = {
+    /*预判定，不读取next的状态*/
     {1,2},{3,4},{6,8},{9,11}
 };
 DFA_StateId m_DFA_FinishState[] = {
     {2,T_ID},{4,T_NUM},{5,T_OP},{7,T_OP},{8,T_OP},{10,T_OP},{11,T_OP}
 };
-/*
- * 按照finishElement分组， 再按照NVAL分组， 然后做map
-
- 或者
- 把 finishElement & string 做 key把NVAL,RELOP的 全部加入map
- 剩下AVAL 加入另一个 map
- */
 DFA_Token m_DFA_Token[] = {
     {T_ID, 1, "int", NVAL},
     {T_ID, 2, "if", NVAL},
@@ -93,7 +97,7 @@ DFA_Token m_DFA_Token[] = {
     {T_OP, 10, "-", NVAL},
     {T_OP, 11, "*", NVAL},
     {T_OP, 12, "/", NVAL},
-    {T_ID, 13, "and", NVAL},
+    {T_ID, 13, "and", NVAL},/*由于是多字符与ID冲突，不作T_OP来判断*/
     {T_ID, 14, "or", NVAL},
     {T_OP, 15, "<", RELOP},
     {T_OP, 15, ">", RELOP},
@@ -108,7 +112,9 @@ DFA_Token m_DFA_Token[] = {
     {T_OP, 20, ")", NVAL},
     {T_OP, 21, "=", NVAL}
 };
-
+/**
+ * @description 把struct初始化成vector结构，后续迭代调用方便
+ */
 vector<DFA_Trans>       v_DFA_Trans( m_DFA_Trans, m_DFA_Trans+sizeof(m_DFA_Trans)/sizeof(m_DFA_Trans[0]) );
 vector<DFA_RestTrans>   v_DFA_RestTrans( m_DFA_RestTrans, m_DFA_RestTrans+sizeof(m_DFA_RestTrans)/sizeof(m_DFA_RestTrans[0]) );
 vector<DFA_StateId>     v_DFA_FinishState( m_DFA_FinishState, m_DFA_FinishState+sizeof(m_DFA_FinishState)/sizeof(m_DFA_FinishState[0]) );
@@ -118,6 +124,9 @@ class DFA {
     public:
         enum charValid {NORMAL=1,ERROR,PREDICATE};
     private:
+        /**
+         * @description 类内 转换项+标识符 存储结构
+         */
         struct t_DFA_Trans {
             int state;
             charValid valid;
@@ -164,23 +173,29 @@ int DFA::getMaxStateId(T &m) {
     }
     return ret;
 }
+/**
+ * @description 初始化状态转换表
+ */
 DFA& DFA::initTrans(vector<DFA_Trans> &m, vector<DFA_RestTrans> &r) {
     delete[] trans;
 
     int maxStates = getMaxStateId< vector<DFA_Trans> >(m);
     trans = new t_DFA_Trans[ maxStates+1 ][256];
 
+    /*全初始化为失败跳转*/
     for(int state = 0; state<maxStates; state++) {
         for(int ch = 0; ch<256; ch++) {
             trans[state][ch].valid = ERROR;
         }
     }
+    /*跳转项*/
     for(vector<DFA_Trans>::iterator itr = m.begin(); itr!=m.end(); itr++) {
         DFA_Trans &p = *itr;
         trans[p.sfrom][p.ch].valid = NORMAL;
         trans[p.sfrom][p.ch].ignore = p.ignore;
         trans[p.sfrom][p.ch].state = p.sto;
     }
+    /*预判定项*/
     for(vector<DFA_RestTrans>::iterator itr = r.begin(); itr!=r.end(); itr++) {
         DFA_RestTrans &p = *itr;
         for(int ch = 0; ch<256; ch++) {
@@ -195,6 +210,7 @@ DFA& DFA::initTrans(vector<DFA_Trans> &m, vector<DFA_RestTrans> &r) {
 
 DFA& DFA::initFinish(vector<DFA_StateId> &f) {
     finish.clear();
+    /*终止状态项*/
     for( vector<DFA_StateId>::iterator itr = f.begin(); itr!=f.end(); itr++) {
         finish.insert(pair<int,finishElement>(itr->sta,itr->to));
     }

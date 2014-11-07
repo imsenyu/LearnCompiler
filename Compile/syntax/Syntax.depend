@@ -1,0 +1,8 @@
+# depslib dependency file v1.0
+1415378285 source:e:\workspace\git\homework\compile\syntax\main.cpp
+	<cstdio>
+	<iostream>
+	<string>
+	<vector>
+	<map>
+
