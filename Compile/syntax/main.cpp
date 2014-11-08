@@ -65,6 +65,7 @@ class LR_Syntax {
         LR_Syntax& buildAnalyticalTable();
     private:
         int calcClosure(m_IState* );
+        bool matchClosureRule(m_ExtItem&,Term*&,Term*&);
     private:
         string ruleDelim;
         map<string,Term*> symbolTable;
@@ -195,9 +196,35 @@ LR_Syntax& LR_Syntax::buildItems() {
     return *this;
 }
 
-int LR_Syntax::calcClosure(m_IState* ) {
+bool LR_Syntax::matchClosureRule(m_ExtItem& eI,Term* & N,vector<Term*> & after) {
+    vector<Term*> &term = eI.item->rule->term;
+    int step = eI.item->point;
+    if ( step<term.size() ) {
+        N = term[step];
+        for(int i=step+1;i<term.size();i++)
+            after.push_back( term[i] );
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+int LR_Syntax::calcClosure(m_IState* sta) {
     ///其中任何一个 ExItem 若有 .Nb, a 遍历 B 的Items ，计算 First( ba )
     /// 把 对应 B的Item,b 加入
+    vector<m_ExtItem*>::iterator itr;
+    for(itr=sta->data.begin();itr!=sta->data.end();itr++) {
+        m_ExtItem &eItem = **itr;
+        Term *n;
+        vector<Term*> after;
+        if ( matchClosureRule( eItem, n, after ) ) {
+            if ( eItem.preTerm ) after.push_back( eItem.preTerm ); //NULL就不加入了
+            ///计算 after的 First集
+            /// 把 n Term开头的 构造newExtItem 把itemTable中的 找出来
+            ///以上两者乘积 放入sta->data
+        }
+    }
 }
 
 LR_Syntax& LR_Syntax::buildAnalyticalTable() {
