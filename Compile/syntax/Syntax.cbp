@@ -34,6 +34,7 @@
 		</Compiler>
 		<Unit filename="in.txt" />
 		<Unit filename="main.cpp" />
+		<Unit filename="strtool.h" />
 		<Extensions>
 			<DoxyBlocks>
 				<comment_style block="0" line="0" />

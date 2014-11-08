@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <queue>
 #include <map>
 #include "strtool.h"
 
@@ -65,7 +66,7 @@ class LR_Syntax {
         LR_Syntax& buildAnalyticalTable();
     private:
         int calcClosure(m_IState* );
-        bool matchClosureRule(m_ExtItem&,Term*&,Term*&);
+        bool matchClosureRule(m_ExtItem&,Term*&,vector<Term*>&);
     private:
         string ruleDelim;
         map<string,Term*> symbolTable;
@@ -73,6 +74,7 @@ class LR_Syntax {
         map<Term*, vector<m_Item*>* > itemTable;   //LR项目表
         ///计算I状态封装， 以及 [I*][Term*] => 映射表,边构造映射表边计算新的I
         map<m_IState*, map<Term*, m_IState*>* > ATable;
+        int bfsFirstSet( vector<Term*>&, vector<Term*>& );
 };
 
 LR_Syntax::m_Rule::m_Rule(string& s, map<string,Term*> m, string delim) {
@@ -210,21 +212,89 @@ bool LR_Syntax::matchClosureRule(m_ExtItem& eI,Term* & N,vector<Term*> & after) 
     }
 }
 
+int LR_Syntax::bfsFirstSet( vector<Term*>& source, vector<Term*>& result ) {
+    ///从 source 中取 [0] 空就算了，如果是 N下一步 ，T push return
+    ///扔到queue中，去productionTable中查 所有rule
+    ///对 每个rule.term 这个vector 取 [0] N则扔到 queue中，T则push
+    /// 用map<rule*, bool> 记录 是否遍历过
+    if ( source.size() == 0 ) return 0;
+    if ( source[0]->terminal ) {
+        result.push_back( source[0] );
+        return 1;
+    }
+
+    queue<Term*> q;
+    map<m_Rule*, bool> visit;
+
+    q.push( source[0] );
+    while( !q.empty() ) {
+        Term &top = *q.front();
+        if ( productionTable.find(&top) != productionTable.end() ) {
+            vector<m_Rule*> &y = *productionTable.find(&top)->second;
+            vector<m_Rule*>::iterator itr;
+            for(itr=y.begin();itr!=y.end();itr++) {
+                m_Rule &r = **itr;
+                if ( visit.find( &r ) != visit.end() )continue;
+                if ( r.term.size() == 0 ) continue;
+                else if ( r.term[0]->terminal ) {
+                    result.push_back( r.term[0] );
+                }
+                else {
+                    q.push( r.term[0] );
+                }
+                visit.insert( pair<m_Rule*,bool>( &r, true ) );
+            }
+        }
+        q.pop();
+    }
+
+    return 0;
+}
+
 int LR_Syntax::calcClosure(m_IState* sta) {
     ///其中任何一个 ExItem 若有 .Nb, a 遍历 B 的Items ，计算 First( ba )
     /// 把 对应 B的Item,b 加入
+    cout<<"closure"<<endl;
     vector<m_ExtItem*>::iterator itr;
-    for(itr=sta->data.begin();itr!=sta->data.end();itr++) {
+    m_IState tmp(*sta);
+    for(itr=tmp.data.begin();itr!=tmp.data.end();itr++) {
         m_ExtItem &eItem = **itr;
         Term *n;
         vector<Term*> after;
         if ( matchClosureRule( eItem, n, after ) ) {
+            cout<<"B:"<<n->name<<endl;
             if ( eItem.preTerm ) after.push_back( eItem.preTerm ); //NULL就不加入了
-            ///计算 after的 First集
+            vector<Term*> firstResult;
+            bfsFirstSet( after, firstResult );
+
+            /*for(vector<Term*>::iterator i=after.begin();i!=after.end();i++) {
+                cout<<"after "<<(*i)->name<<endl;
+            }
+            for(vector<Term*>::iterator i=firstResult.begin();i!=firstResult.end();i++) {
+                cout<<"result "<<(*i)->name<<endl;
+            }*/
+            if ( firstResult.size() == 0 ) {
+                firstResult.push_back( NULL );
+            }
+            cout<<firstResult.size()<<endl;
+            if ( itemTable.find( n )!= itemTable.end() ) {
+                vector<m_Item*> &y = *itemTable.find(n)->second;
+                vector<m_Item*>::iterator jtr;
+                for(jtr=y.begin();jtr!=y.end();jtr++) {
+                    if ( (*jtr)->point != 0 ) continue;
+                    for(vector<Term*>::iterator ktr=firstResult.begin();ktr!=firstResult.end();ktr++) {
+                        cout<<"lala"<<endl;
+                        m_ExtItem* p = new m_ExtItem( *jtr, *ktr );
+                        sta->data.push_back( p );
+                    }
+                }
+            }
+            ///计算 after的 First集 ,需要写一个 BFS
             /// 把 n Term开头的 构造newExtItem 把itemTable中的 找出来
             ///以上两者乘积 放入sta->data
         }
     }
+    return sta->data.size();
 }
 
 LR_Syntax& LR_Syntax::buildAnalyticalTable() {
