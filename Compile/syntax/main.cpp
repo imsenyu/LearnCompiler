@@ -114,6 +114,7 @@ class LR_Syntax {
 
 LR_Syntax::m_Rule::m_Rule(string& s, map<string,Term*> m, string delim) {
     vector<string> vt;
+    strtool::split(s, vt, delim);
     for(vector<string>::iterator itr=vt.begin(); itr!=vt.end(); itr++) {
         if ( m.find(*itr + "_t") != m.end() ) {
             term.push_back( m.find(*itr + "_t")->second );
@@ -133,7 +134,7 @@ void LR_Syntax::m_Rule::showTerm() {
     vector<Term*>::iterator itr;
     for(itr=term.begin();itr!=term.end();itr++) {
         Term &p = **itr;
-        cout<<p.name<<"\t";
+        cout<<p.name<<p.terminal<<"\t";
     }
 }
 
@@ -176,9 +177,10 @@ LR_Syntax& LR_Syntax::showProduction() {
         cout<<"Term:"<<x.name<<endl;
 
         vector<m_Rule*>::iterator jtr;
+        int cnt = 1;
         for(jtr=y.begin();jtr!=y.end();jtr++) {
             m_Rule& r = **jtr;
-            cout<<"\t";
+            cout<<"  "<<cnt++<<"  ";
             r.showTerm();
             cout<<endl;
         }
