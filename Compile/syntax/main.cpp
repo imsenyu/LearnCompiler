@@ -73,8 +73,11 @@ class LR_Syntax {
         map<Term*, vector<m_Rule*>* > productionTable;
         map<Term*, vector<m_Item*>* > itemTable;   //LR项目表
         ///计算I状态封装， 以及 [I*][Term*] => 映射表,边构造映射表边计算新的I
+        vector<m_IState*> v_IState;
         map<m_IState*, map<Term*, m_IState*>* > ATable;
         int bfsFirstSet( vector<Term*>&, vector<Term*>& );
+        m_Item* itemNextStep(m_Item*);
+        bool sameIState(m_IState*);
 };
 
 LR_Syntax::m_Rule::m_Rule(string& s, map<string,Term*> m, string delim) {
@@ -277,16 +280,21 @@ int LR_Syntax::calcClosure(m_IState* sta) {
             if ( firstResult.size() == 0 ) {
                 firstResult.push_back( NULL );
             }
-            cout<<firstResult.size()<<endl;
             if ( itemTable.find( n )!= itemTable.end() ) {
                 vector<m_Item*> &y = *itemTable.find(n)->second;
                 vector<m_Item*>::iterator jtr;
                 for(jtr=y.begin();jtr!=y.end();jtr++) {
                     if ( (*jtr)->point != 0 ) continue;
                     for(vector<Term*>::iterator ktr=firstResult.begin();ktr!=firstResult.end();ktr++) {
-                        cout<<"lala"<<endl;
+
                         m_ExtItem* p = new m_ExtItem( *jtr, *ktr );
                         sta->data.push_back( p );
+
+                        cout<<p->item->rule->from->name<<" ";
+                        if ( p->preTerm == NULL ) cout<<" preTerm:NULL  ";
+                        else cout<<" preTerm:"<<p->preTerm->name<<"  ";
+                        p->item->rule->showTerm( p->item->point );
+                        cout<<endl;
                     }
                 }
             }
@@ -297,23 +305,88 @@ int LR_Syntax::calcClosure(m_IState* sta) {
     }
     return sta->data.size();
 }
+LR_Syntax::m_Item* LR_Syntax::itemNextStep(m_Item* s) {
+
+    //itemTable.find(s->from)
+    map<Term*, vector<m_Item*>* >::iterator mtr;
+    for(mtr=itemTable.begin();mtr!=itemTable.end();mtr++) {
+        //vector<m_Item*> &vy = *itemTable.find(s->rule->from)->second;
+        vector<m_Item*> &vy = *mtr->second;
+        vector<m_Item*>::iterator vtr;
+        for(vtr=vy.begin();vtr!=vy.end();vtr++) {
+            m_Item &p = **vtr;
+            if ( p.rule == s->rule && p.point == s->point+1 )
+                return &p;
+        }
+    }
+}
+
+bool LR_Syntax::sameIState(m_IState* s) {
+    ///按照地址排序，然后依次对比 先Item* 后Term*，不要看ExtItem
+    /// 之后再检查闭包有无错误
+    return false;
+}
 
 LR_Syntax& LR_Syntax::buildAnalyticalTable() {
 ///计算I状态封装， 以及 [I*][Term*] => 映射表,边构造映射表边计算新的I
 /// map<m_IState*, map<Term*, m_IState*>* > ATable;
 
+    int curIState = 0;
+    v_IState.clear();
+
     m_Item &begin = *(*itemTable.begin()->second)[0];
-
-
-    m_IState* head = new m_IState(0);
     m_ExtItem* _P = new m_ExtItem(&begin, NULL);
-    head->data.push_back( _P );
 
-    calcClosure( head );
+    v_IState.push_back( new m_IState(0) );
+    v_IState[0]->data.push_back( _P );
+
+    calcClosure( v_IState[0] );
+
+    while( curIState < v_IState.size() ) {
+            cout<<"CUR"<<curIState<<endl;
+            cin.get();
+        map<string,Term*>::iterator itr;
+        for(itr=symbolTable.begin();itr!=symbolTable.end();itr++) {
+            vector<m_ExtItem*>::iterator jtr;
+            Term &y = *itr->second;
+            for(jtr=v_IState[ curIState ]->data.begin(); jtr!=v_IState[ curIState ]->data.end();jtr++) {
+                m_Item& vItem = *(*jtr)->item;
+                if ( vItem.point >= vItem.rule->term.size() ) continue;
+                if ( vItem.rule->term[ vItem.point ] == &y ) {
+
+                    cout<<"X "<<y.name<<endl;
+                    cout<<"Rule "<<vItem.rule->from->name<<" => ";
+                    vItem.rule->showTerm(vItem.point);
+                    cout<<endl;
+
+                    if ( ATable.find(v_IState[curIState]) == ATable.end() ) {
+                        ATable.insert( pair<m_IState*,map<Term*, m_IState*>* >( v_IState[curIState], new map<Term*, m_IState*> ) );
+                    }
+                    map<Term*, m_IState*>& tiMap = *ATable.find(v_IState[curIState])->second;
+                    cout<<"NUM"<<v_IState.size()<<endl;
+                    if ( tiMap.find(&y) == tiMap.end() ) {
+                        tiMap.insert( pair<Term*, m_IState*>( &y, new m_IState( v_IState.size() ) ) );
+                    }
+                    m_IState& newIState = *tiMap.find(&y)->second;
+                    m_ExtItem* newExt = new m_ExtItem( itemNextStep(&vItem), (*jtr)->preTerm);
+                    newIState.data.push_back( newExt );
+
+                    ///先看下 newIState 的data与之前有无 一致的，一致则重复
+                    if ( !sameIState( &newIState ) )
+                        v_IState.push_back( &newIState );
+                }
+            }
+        }
+
+        /// 从 cur 到 size 计算闭包
+        for(int i=curIState+1;i<v_IState.size();i++)
+            calcClosure( v_IState[i] );
+        ++curIState;
+    }
     ///使用vector 记录IState 编号，记录当前执行编号，和整体数目
     /// while 执行编号< size
-    /// 先把 map<string,Term*> symbolTable; 拷贝一份 在其中 insert "#" Term* NULL，
-    /// 然后 按照 ExtItem 匹配preTerm 是否相同，相同则 加入 ATable(不存在new，存在find),new 了之后记得马上加入vector<I*>
+    /// 先把 map<string,Term*> symbolTable;
+    /// 然后 按照 m_Item point 匹配 下一个 是否相同，相同则 加入 ATable(不存在new，存在find),new 了之后记得马上加入vector<I*>
 
     return *this;
 }
