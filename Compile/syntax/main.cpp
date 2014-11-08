@@ -45,18 +45,33 @@ class LR_Syntax {
             int point;  //小圆点位置，从0开始
             m_Item(m_Rule* a, int b, int c):rule(a),itemID(b),point(c) {}
         };
+        struct m_ExtItem {
+            m_Item *item;
+            Term *preTerm;
+            m_ExtItem(m_Item* a, Term* b=NULL):item(a),preTerm(b) {}
+        };
+        struct m_IState {
+            vector<m_ExtItem*> data;
+            int stateID;
+            m_IState(int a):stateID(0) {}
+        };
+
     public:
         LR_Syntax():ruleDelim("|") {}
         LR_Syntax& initSymbol( vector<LR_Syntax::Term>& );
         LR_Syntax& initProduction( vector<LR_Syntax::Rule>& ); //vector 导入 map
         LR_Syntax& showProduction();
         LR_Syntax& buildItems();
-
+        LR_Syntax& buildAnalyticalTable();
+    private:
+        int calcClosure(m_IState* );
     private:
         string ruleDelim;
         map<string,Term*> symbolTable;
         map<Term*, vector<m_Rule*>* > productionTable;
         map<Term*, vector<m_Item*>* > itemTable;   //LR项目表
+        ///计算I状态封装， 以及 [I*][Term*] => 映射表,边构造映射表边计算新的I
+        map<m_IState*, map<Term*, m_IState*>* > ATable;
 };
 
 LR_Syntax::m_Rule::m_Rule(string& s, map<string,Term*> m, string delim) {
@@ -80,12 +95,12 @@ LR_Syntax::m_Rule::m_Rule(string& s, map<string,Term*> m, string delim) {
 void LR_Syntax::m_Rule::showTerm(int point) {
     vector<Term*>::iterator itr;
     int cnt=1;
-    if(point==0) cout<<"[#]\t";
+    if(point==0) cout<<"[#]   ";
     for(itr=term.begin();itr!=term.end();itr++,cnt++) {
         Term &p = **itr;
         cout<<p.name<<p.terminal;
-        if(cnt==point)cout<<"\t[#]";
-        cout<<"\t";
+        if(cnt==point)cout<<"   [#]";
+        cout<<"   ";
     }
 }
 
@@ -105,6 +120,7 @@ LR_Syntax& LR_Syntax::initProduction( vector<LR_Syntax::Rule>& r) {
             Term* sym = symbolTable.find( p.source + "_n" )->second;
             cout<<" From Symbol["<<sym->name<<"] "<<sym->terminal<<endl;
             address->from = sym;
+
             if ( productionTable.find(sym) == productionTable.end() ) {
                 vector<m_Rule*>* container = new vector<m_Rule*>;
                 container->push_back( address );
@@ -116,7 +132,6 @@ LR_Syntax& LR_Syntax::initProduction( vector<LR_Syntax::Rule>& r) {
         } else
             cout<<"ERROR...Can't Find LeftTerm["<<p.source<<"] in SymbolTable"<<endl;
     }
-
     return *this;
 }
 
@@ -180,6 +195,27 @@ LR_Syntax& LR_Syntax::buildItems() {
     return *this;
 }
 
+int LR_Syntax::calcClosure(m_IState* ) {
+    ///其中任何一个 ExItem 若有 .Nb, a 遍历 B 的Items ，计算 First( ba )
+    /// 把 对应 B的Item,b 加入
+}
+
+LR_Syntax& LR_Syntax::buildAnalyticalTable() {
+///计算I状态封装， 以及 [I*][Term*] => 映射表,边构造映射表边计算新的I
+/// map<m_IState*, map<Term*, m_IState*>* > ATable;
+
+    m_Item &begin = *(*itemTable.begin()->second)[0];
+
+
+    m_IState* head = new m_IState(0);
+    m_ExtItem* _P = new m_ExtItem(&begin, NULL);
+    head->data.push_back( _P );
+
+    calcClosure( head );
+
+    return *this;
+}
+
 LR_Syntax::Rule m_Syntax_Rule[] = {
     {"_P","P"},
     {"P","{|D|S|}"},
@@ -212,7 +248,8 @@ int main() {
       initSymbol(v_Syntax_VN).
       initSymbol(v_Syntax_VT).
       initProduction(v_Syntax_Rule).
-      showProduction().
-      buildItems();
+      //showProduction().
+      buildItems().
+      buildAnalyticalTable();
     return 0;
 }
