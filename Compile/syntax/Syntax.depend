@@ -1,8 +1,11 @@
 # depslib dependency file v1.0
-1415419240 source:e:\workspace\git\homework\compile\syntax\main.cpp
+1415425717 source:e:\workspace\git\homework\compile\syntax\main.cpp
 	<cstdio>
 	<iostream>
 	<string>
 	<vector>
 	<map>
+	"strtool.h"
+
+1415420422 e:\workspace\git\homework\compile\syntax\strtool.h
 

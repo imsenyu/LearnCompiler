@@ -35,24 +35,28 @@ class LR_Syntax {
         class m_Rule {
             public:
                 vector<Term*> term;
+                Term* from;
                 m_Rule(string & , map<string,Term*> , string);
-                void showTerm();
+                void showTerm(int=-1);
         };
-        struct m_Rule_Ptr {
+        struct m_Item {
             m_Rule *rule; //具体规则指针
             int itemID; //LR项目 编号
             int point;  //小圆点位置，从0开始
+            m_Item(m_Rule* a, int b, int c):rule(a),itemID(b),point(c) {}
         };
     public:
         LR_Syntax():ruleDelim("|") {}
         LR_Syntax& initSymbol( vector<LR_Syntax::Term>& );
         LR_Syntax& initProduction( vector<LR_Syntax::Rule>& ); //vector 导入 map
         LR_Syntax& showProduction();
+        LR_Syntax& buildItems();
+
     private:
         string ruleDelim;
         map<string,Term*> symbolTable;
         map<Term*, vector<m_Rule*>* > productionTable;
-        map<int, m_Rule_Ptr*> itemTable;   //LR项目表
+        map<Term*, vector<m_Item*>* > itemTable;   //LR项目表
 };
 
 LR_Syntax::m_Rule::m_Rule(string& s, map<string,Term*> m, string delim) {
@@ -73,11 +77,15 @@ LR_Syntax::m_Rule::m_Rule(string& s, map<string,Term*> m, string delim) {
     }
 }
 
-void LR_Syntax::m_Rule::showTerm() {
+void LR_Syntax::m_Rule::showTerm(int point) {
     vector<Term*>::iterator itr;
-    for(itr=term.begin();itr!=term.end();itr++) {
+    int cnt=1;
+    if(point==0) cout<<"[#]\t";
+    for(itr=term.begin();itr!=term.end();itr++,cnt++) {
         Term &p = **itr;
-        cout<<p.name<<p.terminal<<"\t";
+        cout<<p.name<<p.terminal;
+        if(cnt==point)cout<<"\t[#]";
+        cout<<"\t";
     }
 }
 
@@ -96,7 +104,7 @@ LR_Syntax& LR_Syntax::initProduction( vector<LR_Syntax::Rule>& r) {
         if ( symbolTable.find( p.source + "_n" ) != symbolTable.end() ) {
             Term* sym = symbolTable.find( p.source + "_n" )->second;
             cout<<" From Symbol["<<sym->name<<"] "<<sym->terminal<<endl;
-
+            address->from = sym;
             if ( productionTable.find(sym) == productionTable.end() ) {
                 vector<m_Rule*>* container = new vector<m_Rule*>;
                 container->push_back( address );
@@ -128,6 +136,48 @@ LR_Syntax& LR_Syntax::showProduction() {
             cout<<endl;
         }
     }
+    return *this;
+}
+
+LR_Syntax& LR_Syntax::buildItems() {
+    ///map<Term*, vector<m_Rule*>* > productionTable;
+    ///map<Term*, vector<m_Item*>* > itemTable;   //LR项目表
+    map<Term*, vector<m_Rule*>* >::iterator itr;
+    int termCnt = 0;
+    for(itr=productionTable.begin();itr!=productionTable.end();itr++) {
+        vector<m_Rule*> &y = *itr->second;
+        vector<m_Rule*>::iterator jtr;
+
+        for(jtr=y.begin();jtr!=y.end();jtr++) {
+            m_Rule& r = **jtr;
+            vector<Term*>::iterator jtr;
+            for(int cnt=0;cnt<=r.term.size();cnt++) {
+                m_Item* p = new m_Item(&r, termCnt++,cnt);
+                if ( itemTable.find( r.from ) !=itemTable.end() ) {
+                    vector<m_Item*> &vm = *itemTable.find(r.from)->second;
+                    vm.push_back( p );
+                }
+                else {
+                    vector<m_Item*> *vm = new vector<m_Item*>;
+                    vm->push_back( p );
+                    itemTable.insert( pair<Term*,vector<m_Item*>*>( r.from, vm ) );
+                }
+            }
+        }
+    }
+
+    map<Term*, vector<m_Item*>* >::iterator mtr;
+    for(mtr=itemTable.begin();mtr!=itemTable.end();mtr++) {
+        vector<m_Item*> &vy = *mtr->second;
+        vector<m_Item*>::iterator vtr;
+        for(vtr=vy.begin();vtr!=vy.end();vtr++) {
+            m_Item &p = **vtr;
+            cout<<"["<<p.itemID<<"] "<<p.rule->from->name<<" => ";
+            p.rule->showTerm(p.point);
+            cout<<endl;
+        }
+    }
+    return *this;
 }
 
 LR_Syntax::Rule m_Syntax_Rule[] = {
@@ -162,6 +212,7 @@ int main() {
       initSymbol(v_Syntax_VN).
       initSymbol(v_Syntax_VT).
       initProduction(v_Syntax_Rule).
-      showProduction();
+      showProduction().
+      buildItems();
     return 0;
 }
