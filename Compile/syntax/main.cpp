@@ -217,6 +217,7 @@ int LR_Syntax::bfsFirstSet( vector<Term*>& source, vector<Term*>& result ) {
     ///扔到queue中，去productionTable中查 所有rule
     ///对 每个rule.term 这个vector 取 [0] N则扔到 queue中，T则push
     /// 用map<rule*, bool> 记录 是否遍历过
+    ///!!!不支持 查找 含有 空规则 的 产生式！ 空规则 需要使用 dfa查找，bfs不记录路径不能回溯
     if ( source.size() == 0 ) return 0;
     if ( source[0]->terminal ) {
         result.push_back( source[0] );
@@ -309,6 +310,10 @@ LR_Syntax& LR_Syntax::buildAnalyticalTable() {
     head->data.push_back( _P );
 
     calcClosure( head );
+    ///使用vector 记录IState 编号，记录当前执行编号，和整体数目
+    /// while 执行编号< size
+    /// 先把 map<string,Term*> symbolTable; 拷贝一份 在其中 insert "#" Term* NULL，
+    /// 然后 按照 ExtItem 匹配preTerm 是否相同，相同则 加入 ATable(不存在new，存在find),new 了之后记得马上加入vector<I*>
 
     return *this;
 }
