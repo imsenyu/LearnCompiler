@@ -87,7 +87,7 @@ class LR_Syntax {
         map<m_IState*, map<Term*, m_IState*>* > ATable;
         int bfsFirstSet( vector<Term*>&, set<Term*>& );
         m_Item* itemNextStep(m_Item*);
-        bool sameIState(m_IState*);
+        int sameIState(m_IState*);
         void stateVectorSort(m_IState*);
         static int stateVectorSort_cmp( m_ExtItem*, m_ExtItem* );
 };
@@ -370,7 +370,7 @@ int LR_Syntax::stateVectorSort_cmp( m_ExtItem* a, m_ExtItem* b ) {
     else return x.item < y.item;
 }
 
-bool LR_Syntax::sameIState(m_IState* s) {
+int LR_Syntax::sameIState(m_IState* s) {
     ///按照地址排序，然后依次对比 先Item* 后Term*，不要看ExtItem
     /// 之后再检查闭包有无错误
     set<m_ExtItem*,haha> &v = s->data;
@@ -386,10 +386,10 @@ bool LR_Syntax::sameIState(m_IState* s) {
                     break;
                 }
             }
-            if ( !flag ) return true;
+            if ( !flag ) return i;
         }
     }
-    return false;
+    return 0;
 }
 
 LR_Syntax& LR_Syntax::buildAnalyticalTable() {
@@ -464,10 +464,13 @@ LR_Syntax& LR_Syntax::buildAnalyticalTable() {
             v_tmp[i]->stateID = v_IState.size();
             calcClosure( v_tmp[i] );
             //stateVectorSort(v_tmp[i]);
-            if ( !sameIState( v_tmp[i] ) ) {
+                int notsame;
+            ///注 ：如果和 0 状态same的话，理论上应该是 产生式写错，所以先不考虑这种情况
+            if ( !(notsame = sameIState( v_tmp[i] )) ) {
                 v_IState.push_back( v_tmp[i] );
             }
             else {
+                cout<<"  same to "<<notsame<<endl;
                 ///删除 这个state
             }
         }
