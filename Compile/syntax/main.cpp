@@ -31,7 +31,7 @@ class LR_Syntax {
             string name;
             bool terminal;
         };
-    private:
+    public:
         struct Production {
             int from;
         };
@@ -53,12 +53,20 @@ class LR_Syntax {
             Term *preTerm;
             m_ExtItem(m_Item* a, Term* b=NULL):item(a),preTerm(b) {}
         };
+
+        class haha
+        {
+            public:
+            bool operator() (m_ExtItem* a, m_ExtItem* b)
+            {
+                return a->item == b->item ? a->preTerm<b->preTerm : a->item<b->item;
+            }
+        };
         struct m_IState {
-            vector<m_ExtItem*> data;
+            set<m_ExtItem*,haha> data;
             int stateID;
             m_IState(int a):stateID(a) {}
         };
-
     public:
         LR_Syntax():ruleDelim("|") {}
         LR_Syntax& initSymbol( vector<LR_Syntax::Term>& );
@@ -83,6 +91,8 @@ class LR_Syntax {
         void stateVectorSort(m_IState*);
         static int stateVectorSort_cmp( m_ExtItem*, m_ExtItem* );
 };
+
+
 
 LR_Syntax::m_Rule::m_Rule(string& s, map<string,Term*> m, string delim) {
     vector<string> vt;
@@ -264,7 +274,7 @@ int LR_Syntax::calcClosure(m_IState* sta) {
     ///其中任何一个 ExItem 若有 .Nb, a 遍历 B 的Items ，计算 First( ba )
     /// 把 对应 B的Item,b 加入
     cout<<endl<<" In Closure"<<endl;
-    vector<m_ExtItem*>::iterator itr;
+    set<m_ExtItem*,haha>::iterator itr;
     m_IState tmp(*sta);
 
     //cout<<"  given IState ";
@@ -304,7 +314,7 @@ int LR_Syntax::calcClosure(m_IState* sta) {
 
                         m_ExtItem* p = new m_ExtItem( *jtr, *ktr );
                         ///扔进去的时候 判重
-                        sta->data.push_back( p );
+                        sta->data.insert( p );
 
                    /*     cout<<"  ADD "<<p->item->rule->from->name<<" ";
                         if ( p->preTerm == NULL ) cout<<" preTerm:NULL  ";
@@ -320,8 +330,9 @@ int LR_Syntax::calcClosure(m_IState* sta) {
         }
     }
     cout<<" All of Closure"<<endl;
-    for(int i=0;i<sta->data.size();i++) {
-        m_ExtItem &x = *sta->data[i];
+    set<m_ExtItem*,haha>::iterator jtr;
+    for(jtr=sta->data.begin();jtr!=sta->data.end();jtr++) {
+        m_ExtItem &x = **jtr;
         cout<<"  "<<x.item->rule->from->name<<" => ";
         x.item->rule->showTerm(x.item->point);
         cout<<" char "<<(x.preTerm?x.preTerm->name:"#")<<endl;
@@ -346,8 +357,8 @@ LR_Syntax::m_Item* LR_Syntax::itemNextStep(m_Item* s) {
 }
 
 void LR_Syntax::stateVectorSort(m_IState* sta) {
-    vector<m_ExtItem*> &v = sta->data;
-    sort(v.begin(),v.end(),LR_Syntax::stateVectorSort_cmp);
+    set<m_ExtItem*,haha> &v = sta->data;
+    //sort(v.begin(),v.end(),LR_Syntax::stateVectorSort_cmp);
     return;
 }
 
@@ -362,14 +373,15 @@ int LR_Syntax::stateVectorSort_cmp( m_ExtItem* a, m_ExtItem* b ) {
 bool LR_Syntax::sameIState(m_IState* s) {
     ///按照地址排序，然后依次对比 先Item* 后Term*，不要看ExtItem
     /// 之后再检查闭包有无错误
-    vector<m_ExtItem*> &v = s->data;
+    set<m_ExtItem*,haha> &v = s->data;
     for(int i=0;i<v_IState.size();i++) {
-        vector<m_ExtItem*> &cur = v_IState[i]->data;
+        set<m_ExtItem*,haha> &cur = v_IState[i]->data;
         if ( v.size() != cur.size() ) continue;
         else {
             bool flag = false;
-            for(int j=0;j<v.size();j++) {
-                if ( v[j]->item != cur[j]->item || v[j]->preTerm != cur[j]->preTerm ) {
+            set<m_ExtItem*,haha>::iterator j,k;
+            for(j=v.begin(),k=cur.begin();j!=v.end() && k!=cur.end();j++,k++) {
+                if ( (*j)->item != (*k)->item || (*j)->preTerm != (*k)->preTerm ) {
                     flag = true;
                     break;
                 }
@@ -391,17 +403,17 @@ LR_Syntax& LR_Syntax::buildAnalyticalTable() {
     m_ExtItem* _P = new m_ExtItem(&begin, NULL);
 
     v_IState.push_back( new m_IState(0) );
-    v_IState[0]->data.push_back( _P );
+    v_IState[0]->data.insert( _P );
 
     calcClosure( v_IState[0] );
 
     while( curIState < v_IState.size() ) {
         cout<<"CUR STEP = "<<curIState<<endl;
-        cin.get();
+        //cin.get();
         map<string,Term*>::iterator itr;
         vector<m_IState*> v_tmp;
         for(itr=symbolTable.begin();itr!=symbolTable.end();itr++) {
-            vector<m_ExtItem*>::iterator jtr;
+            set<m_ExtItem*,haha>::iterator jtr;
             Term &y = *itr->second;
             ///遍历IState中每个ExtItem
             for(jtr=v_IState[ curIState ]->data.begin(); jtr!=v_IState[ curIState ]->data.end();jtr++) {
@@ -430,7 +442,7 @@ LR_Syntax& LR_Syntax::buildAnalyticalTable() {
                     m_IState& newIState = *tiMap.find(&y)->second;
                     ///扔进去的时候 判重
                     m_ExtItem* newExt = new m_ExtItem( itemNextStep(&vItem), (*jtr)->preTerm);
-                    newIState.data.push_back( newExt );
+                    newIState.data.insert( newExt );
 
                     ///不能在这里算闭包，先全部扔到 临时v_ISTATE_tmp 中,判定完重复后再扔回去
                     ///先看下 newIState 的data与之前有无 一致的，一致则重复
@@ -451,7 +463,7 @@ LR_Syntax& LR_Syntax::buildAnalyticalTable() {
         for(int i=0;i<v_tmp.size();i++) {
             v_tmp[i]->stateID = v_IState.size();
             calcClosure( v_tmp[i] );
-            stateVectorSort(v_tmp[i]);
+            //stateVectorSort(v_tmp[i]);
             if ( !sameIState( v_tmp[i] ) ) {
                 v_IState.push_back( v_tmp[i] );
             }
