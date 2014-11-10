@@ -10,6 +10,8 @@
 #include <vector>
 #include <queue>
 #include <map>
+#include <set>
+#include <algorithm>
 #include "strtool.h"
 
 using namespace std;
@@ -54,7 +56,7 @@ class LR_Syntax {
         struct m_IState {
             vector<m_ExtItem*> data;
             int stateID;
-            m_IState(int a):stateID(0) {}
+            m_IState(int a):stateID(a) {}
         };
 
     public:
@@ -75,9 +77,11 @@ class LR_Syntax {
         ///计算I状态封装， 以及 [I*][Term*] => 映射表,边构造映射表边计算新的I
         vector<m_IState*> v_IState;
         map<m_IState*, map<Term*, m_IState*>* > ATable;
-        int bfsFirstSet( vector<Term*>&, vector<Term*>& );
+        int bfsFirstSet( vector<Term*>&, set<Term*>& );
         m_Item* itemNextStep(m_Item*);
         bool sameIState(m_IState*);
+        void stateVectorSort(m_IState*);
+        static int stateVectorSort_cmp( m_ExtItem*, m_ExtItem* );
 };
 
 LR_Syntax::m_Rule::m_Rule(string& s, map<string,Term*> m, string delim) {
@@ -215,7 +219,7 @@ bool LR_Syntax::matchClosureRule(m_ExtItem& eI,Term* & N,vector<Term*> & after) 
     }
 }
 
-int LR_Syntax::bfsFirstSet( vector<Term*>& source, vector<Term*>& result ) {
+int LR_Syntax::bfsFirstSet( vector<Term*>& source, set<Term*>& result ) {
     ///从 source 中取 [0] 空就算了，如果是 N下一步 ，T push return
     ///扔到queue中，去productionTable中查 所有rule
     ///对 每个rule.term 这个vector 取 [0] N则扔到 queue中，T则push
@@ -223,9 +227,10 @@ int LR_Syntax::bfsFirstSet( vector<Term*>& source, vector<Term*>& result ) {
     ///!!!不支持 查找 含有 空规则 的 产生式！ 空规则 需要使用 dfa查找，bfs不记录路径不能回溯
     if ( source.size() == 0 ) return 0;
     if ( source[0]->terminal ) {
-        result.push_back( source[0] );
+        result.insert( source[0] );
         return 1;
     }
+
 
     queue<Term*> q;
     map<m_Rule*, bool> visit;
@@ -241,7 +246,7 @@ int LR_Syntax::bfsFirstSet( vector<Term*>& source, vector<Term*>& result ) {
                 if ( visit.find( &r ) != visit.end() )continue;
                 if ( r.term.size() == 0 ) continue;
                 else if ( r.term[0]->terminal ) {
-                    result.push_back( r.term[0] );
+                    result.insert( r.term[0] );
                 }
                 else {
                     q.push( r.term[0] );
@@ -258,43 +263,54 @@ int LR_Syntax::bfsFirstSet( vector<Term*>& source, vector<Term*>& result ) {
 int LR_Syntax::calcClosure(m_IState* sta) {
     ///其中任何一个 ExItem 若有 .Nb, a 遍历 B 的Items ，计算 First( ba )
     /// 把 对应 B的Item,b 加入
-    cout<<"closure"<<endl;
+    cout<<endl<<" In Closure"<<endl;
     vector<m_ExtItem*>::iterator itr;
     m_IState tmp(*sta);
+
+    //cout<<"  given IState ";
+    cout<<"  ID = "<<tmp.stateID<<endl;
+    /*for(int i=0;i<tmp.data.size();i++) {
+        cout<<"  "<<tmp.data[i]->item->rule->from->name<<" => ";
+        tmp.data[i]->item->rule->showTerm(tmp.data[i]->item->point),
+        cout<<" char "<<((tmp.data[i]->preTerm)?(tmp.data[i]->preTerm->name):("#"))<<endl;
+    }*/
+
+
     for(itr=tmp.data.begin();itr!=tmp.data.end();itr++) {
         m_ExtItem &eItem = **itr;
         Term *n;
         vector<Term*> after;
         if ( matchClosureRule( eItem, n, after ) ) {
-            cout<<"B:"<<n->name<<endl;
+
             if ( eItem.preTerm ) after.push_back( eItem.preTerm ); //NULL就不加入了
-            vector<Term*> firstResult;
+            set<Term*> firstResult;
             bfsFirstSet( after, firstResult );
 
             /*for(vector<Term*>::iterator i=after.begin();i!=after.end();i++) {
-                cout<<"after "<<(*i)->name<<endl;
+                cout<<"   after "<<(*i)->name<<endl;
             }
-            for(vector<Term*>::iterator i=firstResult.begin();i!=firstResult.end();i++) {
-                cout<<"result "<<(*i)->name<<endl;
+            for(set<Term*>::iterator i=firstResult.begin();i!=firstResult.end();i++) {
+                cout<<"   result "<<(*i)->name<<endl;
             }*/
             if ( firstResult.size() == 0 ) {
-                firstResult.push_back( NULL );
+                firstResult.insert( NULL );
             }
             if ( itemTable.find( n )!= itemTable.end() ) {
                 vector<m_Item*> &y = *itemTable.find(n)->second;
                 vector<m_Item*>::iterator jtr;
                 for(jtr=y.begin();jtr!=y.end();jtr++) {
                     if ( (*jtr)->point != 0 ) continue;
-                    for(vector<Term*>::iterator ktr=firstResult.begin();ktr!=firstResult.end();ktr++) {
+                    for(set<Term*>::iterator ktr=firstResult.begin();ktr!=firstResult.end();ktr++) {
 
                         m_ExtItem* p = new m_ExtItem( *jtr, *ktr );
+                        ///扔进去的时候 判重
                         sta->data.push_back( p );
 
-                        cout<<p->item->rule->from->name<<" ";
+                   /*     cout<<"  ADD "<<p->item->rule->from->name<<" ";
                         if ( p->preTerm == NULL ) cout<<" preTerm:NULL  ";
                         else cout<<" preTerm:"<<p->preTerm->name<<"  ";
                         p->item->rule->showTerm( p->item->point );
-                        cout<<endl;
+                        cout<<endl;*/
                     }
                 }
             }
@@ -303,6 +319,14 @@ int LR_Syntax::calcClosure(m_IState* sta) {
             ///以上两者乘积 放入sta->data
         }
     }
+    cout<<" All of Closure"<<endl;
+    for(int i=0;i<sta->data.size();i++) {
+        m_ExtItem &x = *sta->data[i];
+        cout<<"  "<<x.item->rule->from->name<<" => ";
+        x.item->rule->showTerm(x.item->point);
+        cout<<" char "<<(x.preTerm?x.preTerm->name:"#")<<endl;
+    }
+    cout<<" Out Closure"<<endl<<endl;
     return sta->data.size();
 }
 LR_Syntax::m_Item* LR_Syntax::itemNextStep(m_Item* s) {
@@ -321,9 +345,38 @@ LR_Syntax::m_Item* LR_Syntax::itemNextStep(m_Item* s) {
     }
 }
 
+void LR_Syntax::stateVectorSort(m_IState* sta) {
+    vector<m_ExtItem*> &v = sta->data;
+    sort(v.begin(),v.end(),LR_Syntax::stateVectorSort_cmp);
+    return;
+}
+
+int LR_Syntax::stateVectorSort_cmp( m_ExtItem* a, m_ExtItem* b ) {
+    m_ExtItem &x = *a, &y = *b;
+    if ( x.item == y.item ) {
+        return x.preTerm < y.preTerm;
+    }
+    else return x.item < y.item;
+}
+
 bool LR_Syntax::sameIState(m_IState* s) {
     ///按照地址排序，然后依次对比 先Item* 后Term*，不要看ExtItem
     /// 之后再检查闭包有无错误
+    vector<m_ExtItem*> &v = s->data;
+    for(int i=0;i<v_IState.size();i++) {
+        vector<m_ExtItem*> &cur = v_IState[i]->data;
+        if ( v.size() != cur.size() ) continue;
+        else {
+            bool flag = false;
+            for(int j=0;j<v.size();j++) {
+                if ( v[j]->item != cur[j]->item || v[j]->preTerm != cur[j]->preTerm ) {
+                    flag = true;
+                    break;
+                }
+            }
+            if ( !flag ) return true;
+        }
+    }
     return false;
 }
 
@@ -343,44 +396,69 @@ LR_Syntax& LR_Syntax::buildAnalyticalTable() {
     calcClosure( v_IState[0] );
 
     while( curIState < v_IState.size() ) {
-            cout<<"CUR"<<curIState<<endl;
-            cin.get();
+        cout<<"CUR STEP = "<<curIState<<endl;
+        cin.get();
         map<string,Term*>::iterator itr;
+        vector<m_IState*> v_tmp;
         for(itr=symbolTable.begin();itr!=symbolTable.end();itr++) {
             vector<m_ExtItem*>::iterator jtr;
             Term &y = *itr->second;
+            ///遍历IState中每个ExtItem
             for(jtr=v_IState[ curIState ]->data.begin(); jtr!=v_IState[ curIState ]->data.end();jtr++) {
                 m_Item& vItem = *(*jtr)->item;
+                ///终止则跳过
                 if ( vItem.point >= vItem.rule->term.size() ) continue;
+                ///下一个 项 等于 遍历项
                 if ( vItem.rule->term[ vItem.point ] == &y ) {
 
-                    cout<<"X "<<y.name<<endl;
-                    cout<<"Rule "<<vItem.rule->from->name<<" => ";
+                    cout<<" X-Term "<<y.name<<endl;
+                    cout<<" Trans Rule "<<vItem.rule->from->name<<" => ";
                     vItem.rule->showTerm(vItem.point);
-                    cout<<endl;
+                    cout<<((*jtr)->preTerm?(*jtr)->preTerm->name:"#")<<endl;
+
 
                     if ( ATable.find(v_IState[curIState]) == ATable.end() ) {
                         ATable.insert( pair<m_IState*,map<Term*, m_IState*>* >( v_IState[curIState], new map<Term*, m_IState*> ) );
                     }
                     map<Term*, m_IState*>& tiMap = *ATable.find(v_IState[curIState])->second;
-                    cout<<"NUM"<<v_IState.size()<<endl;
+                    //cout<<"NUM"<<v_IState.size()<<endl;
+                    bool isNewState = false;
                     if ( tiMap.find(&y) == tiMap.end() ) {
+                        isNewState = true;
                         tiMap.insert( pair<Term*, m_IState*>( &y, new m_IState( v_IState.size() ) ) );
                     }
                     m_IState& newIState = *tiMap.find(&y)->second;
+                    ///扔进去的时候 判重
                     m_ExtItem* newExt = new m_ExtItem( itemNextStep(&vItem), (*jtr)->preTerm);
                     newIState.data.push_back( newExt );
 
+                    ///不能在这里算闭包，先全部扔到 临时v_ISTATE_tmp 中,判定完重复后再扔回去
                     ///先看下 newIState 的data与之前有无 一致的，一致则重复
-                    if ( !sameIState( &newIState ) )
-                        v_IState.push_back( &newIState );
+                    ///先算完 闭包再那啥
+                    if ( isNewState ) {
+                        v_tmp.push_back( &newIState );
+                    }
+
                 }
             }
         }
 
-        /// 从 cur 到 size 计算闭包
-        for(int i=curIState+1;i<v_IState.size();i++)
-            calcClosure( v_IState[i] );
+        /// 从 cur 到 size 计算闭包,在这里算闭包，如果遇到状态呵呵的 需要扔掉
+        ///for(int i=curIState+1;i<v_IState.size();i++)
+            ///calcClosure( v_IState[i] );
+        ///if ( !sameIState( &newIState ) )
+                     ///   v_IState.push_back( &newIState );
+        for(int i=0;i<v_tmp.size();i++) {
+            v_tmp[i]->stateID = v_IState.size();
+            calcClosure( v_tmp[i] );
+            stateVectorSort(v_tmp[i]);
+            if ( !sameIState( v_tmp[i] ) ) {
+                v_IState.push_back( v_tmp[i] );
+            }
+            else {
+                ///删除 这个state
+            }
+        }
         ++curIState;
     }
     ///使用vector 记录IState 编号，记录当前执行编号，和整体数目
