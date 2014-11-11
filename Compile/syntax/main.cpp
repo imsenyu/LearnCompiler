@@ -70,7 +70,7 @@ class LR_Syntax {
         enum actionType { Step=1,Recur,Gto,Acc,Err };
         struct m_Action {
             actionType type;
-            Term* _step;
+            m_IState* _step;
             m_Rule* _recur;
             m_IState* _gto;
             m_Action():type(Err),_step(NULL),_recur(NULL),_gto(NULL) {}
@@ -103,6 +103,9 @@ class LR_Syntax {
         int sameIState(m_IState*);
         bool destroyTmpIState(m_IState*);
         m_IState* ATableSearch(m_IState*, Term*);
+
+        ///自动解决 if-then-else 样式的问题，遇到 需要 char 移近项，忽略，转而使用#结束规约
+        void autoSolveConflict(map<Term*, m_Action*> &, Term*, m_ExtItem&);
 
 };
 
@@ -577,7 +580,7 @@ LR_Syntax& LR_Syntax::buildActionGotoTable() {
             if ( termPtr && termPtr->terminal && found ) {
                 /// step
                 action.type = Step;
-                action._step = termPtr;
+                action._step = found;
             }
             else if ( found ) {
                 /// gto
@@ -623,9 +626,10 @@ LR_Syntax& LR_Syntax::buildActionGotoTable() {
                     flag = true;
                 cout<<" ERR:"<<" Recur Action Conflict "<< action.type<<endl;
                 if ( action.type = Step ) {
-                    cout<<"   "<<action._step->name<<endl;
+                    cout<<"   TransTo"<<action._step->stateID<<endl;
+                    cout<<"  Auto-Set Action.preTerm ["<<(termPtr?termPtr->name:"#")<<"] to [#]"<<endl;
+                    autoSolveConflict( acMap, NULL, eItem );
                 }
-                continue;
             }
             else {
                 action.type = Recur;
@@ -640,6 +644,15 @@ LR_Syntax& LR_Syntax::buildActionGotoTable() {
     }
 
     return *this;
+}
+
+void LR_Syntax::autoSolveConflict( map<Term*, m_Action*> & acMap, Term* termPtr, m_ExtItem& eItem ) {
+    if ( acMap.find(termPtr) == acMap.end() ) {
+        acMap.insert( pair<Term*, m_Action*>( termPtr, new m_Action ) );
+    }
+    m_Action &action = *acMap.find(NULL)->second;
+    action.type = Recur;
+    action._recur = eItem.item->rule;
 }
 
 /*书上7.4样例测试AC
@@ -664,19 +677,19 @@ LR_Syntax::Rule m_Syntax_Rule[] = {
     {"CpxS","S|;|CpxS"},{"CpxS","S"},
     {"BoolExp","BoolExp|and|BoolExp"},{"BoolExp","BoolExp|or|BoolExp"},{"BoolExp","ID|relop|ID"},{"BoolExp","ID"},
     {"CalcExp","CalcExp|+|CalcExp"},{"CalcExp","CalcExp|-|CalcExp"},{"CalcExp","CalcExp|*|CalcExp"},{"CalcExp","CalcExp|/|CalcExp"},{"CalcExp","(|CalcExp|)"},{"CalcExp","ID"},{"CalcExp","NUM"},
-    {"relop","<"},{"relop",">"},{"relop","<="},{"relop",">="},{"relop","!="},{"relop","=="}
+  /*  {"relop","<"},{"relop",">"},{"relop","<="},{"relop",">="},{"relop","!="},{"relop","=="}*/
 };
 
 LR_Syntax::Term m_Syntax_VN[] = {
     {"int",true},{"if",true},{"then",true},{"else",true},{"while",true},{"do",true},
     {"ID",true},{"NUM",true},
     {"+",true},{"-",true},{"*",true},{"/",true},{"and",true},{"or",true},
-    {"<",true},{">",true},{"<=",true},{">=",true},{"!=",true},{"==",true},
-    {"{",true},{"}",true},{";",true},{"(",true},{")",true},{"=",true}
+   /* {"<",true},{">",true},{"<=",true},{">=",true},{"!=",true},{"==",true},*/
+    {"{",true},{"}",true},{";",true},{"(",true},{")",true},{"=",true}/**/,{"relop",true}
 };
 
 LR_Syntax::Term m_Syntax_VT[] = {
-    {"_P",false},{"P",false},{"D",false},{"S",false},{"BoolExp",false},{"CalcExp",false},{"CpxS",false},{"relop",false}
+    {"_P",false},{"P",false},{"D",false},{"S",false},{"BoolExp",false},{"CalcExp",false},{"CpxS",false}/*,{"relop",false}*/
 };
 
 vector<LR_Syntax::Rule> v_Syntax_Rule( m_Syntax_Rule, m_Syntax_Rule+sizeof(m_Syntax_Rule)/sizeof(m_Syntax_Rule[0]) );
