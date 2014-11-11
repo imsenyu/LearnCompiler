@@ -469,30 +469,20 @@ LR_Syntax& LR_Syntax::buildAnalyticalTable() {
     return *this;
 }
 
+/*书上7.4样例测试AC
 LR_Syntax::Rule m_Syntax_Rule[] = {
-    {"_S","S"},
-    {"S","a|A|d"},
-    {"S","b|A|c"},
-    {"S","a|e|c"},
-    {"S","b|e|d"},
-    {"A","e"},
+    {"_S","S"},{"S","a|A|d{"S","b|A|c"},{"S","a|e|c"},{"S","b|e|d"},{"A","e"}
 };
 
 LR_Syntax::Term m_Syntax_VN[] = {
-    {"a",true},
-    {"b",true},
-    {"c",true},
-    {"d",true},
-    {"e",true},
+    {"a",true},{"b",true},{"c",true},{"d",true},{"e",true},
 };
 
 LR_Syntax::Term m_Syntax_VT[] = {
-    {"_S",false},
-    {"S",false},
-    {"A",false},
+    {"_S",false},{"S",false},{"A",false},
 };
+*/
 
-/*
 LR_Syntax::Rule m_Syntax_Rule[] = {
     {"_P","P"},
     {"P","{|D|S|}"},
@@ -515,7 +505,7 @@ LR_Syntax::Term m_Syntax_VN[] = {
 LR_Syntax::Term m_Syntax_VT[] = {
     {"_P",false},{"P",false},{"D",false},{"S",false},{"BoolExp",false},{"CalcExp",false},{"CpxS",false},{"relop",false}
 };
-*/
+
 vector<LR_Syntax::Rule> v_Syntax_Rule( m_Syntax_Rule, m_Syntax_Rule+sizeof(m_Syntax_Rule)/sizeof(m_Syntax_Rule[0]) );
 vector<LR_Syntax::Term> v_Syntax_VN( m_Syntax_VN, m_Syntax_VN+sizeof(m_Syntax_VN)/sizeof(m_Syntax_VN[0]) );
 vector<LR_Syntax::Term> v_Syntax_VT( m_Syntax_VT, m_Syntax_VT+sizeof(m_Syntax_VT)/sizeof(m_Syntax_VT[0]) );
