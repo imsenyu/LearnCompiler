@@ -1,6 +1,7 @@
 # depslib dependency file v1.0
-1415713805 source:e:\workspace\git\homework\compile\syntax\main.cpp
+1415715961 source:e:\workspace\git\homework\compile\syntax\main.cpp
 	<cstdio>
+	<cstdlib>
 	<iostream>
 	<string>
 	<vector>

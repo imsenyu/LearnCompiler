@@ -5,6 +5,7 @@
  * @description Compiler-基于LL(0)的简易语法分析器实现
  */
 #include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -30,6 +31,8 @@ class LR_Syntax {
         struct Term {
             string name;
             bool terminal;
+            int typeId;
+            bool extra;
         };
     private:
         struct Production {
@@ -75,9 +78,19 @@ class LR_Syntax {
             m_IState* _gto;
             m_Action():type(Err),_step(NULL),_recur(NULL),_gto(NULL) {}
         };
+        struct m_LexGroup {
+            Term* term;
+            int typeId;
+            string extra;
+            m_LexGroup(int a,char*b, Term* c=NULL):typeId(a),term(c) {
+                if ( b[0]!='_' || b[1] != 0 ) {
+                    extra = b;
+                }
+            }
+        };
 
     public:
-        LR_Syntax():ruleDelim("|") {}
+        LR_Syntax():ruleDelim("|"),lexFile(NULL) {}
         LR_Syntax& initSymbol( vector<LR_Syntax::Term>& );
         LR_Syntax& initProduction( vector<LR_Syntax::Rule>& ); //vector 导入 map
         LR_Syntax& showProduction();
@@ -85,6 +98,8 @@ class LR_Syntax {
         LR_Syntax& buildAnalyticalTable();
         LR_Syntax& showIState(int = -1);
         LR_Syntax& buildActionGotoTable();
+        LR_Syntax& initLEXSymbol(string);
+        LR_Syntax& runSyntaxAutoman();
     private:
         int calcClosure(m_IState* );
         bool matchClosurePattern(m_ExtItem&,Term*&,vector<Term*>&);
@@ -97,7 +112,8 @@ class LR_Syntax {
         vector<m_IState*> v_IState;
         map<m_IState*, map<Term*, m_Action*>* > ActionTable;
         map<m_IState*, map<Term*, m_IState*>* > StateTable;
-
+        queue<m_LexGroup*> queueLex;
+        FILE *lexFile;
         int bfsFirstSet( vector<Term*>&, set<Term*>& );
         m_Item* itemNextStep(m_Item*);
         int sameIState(m_IState*);
@@ -106,6 +122,8 @@ class LR_Syntax {
 
         ///自动解决 if-then-else 样式的问题，遇到 需要 char 移近项，忽略，转而使用#结束规约
         void autoSolveConflict(map<Term*, m_Action*> &, Term*, m_ExtItem&);
+
+
 
 };
 
@@ -655,6 +673,31 @@ void LR_Syntax::autoSolveConflict( map<Term*, m_Action*> & acMap, Term* termPtr,
     action._recur = eItem.item->rule;
 }
 
+LR_Syntax& LR_Syntax::initLEXSymbol(string filename) {
+    if ( lexFile ) fclose(lexFile);
+    lexFile = fopen(filename.c_str(), "r+");
+    char buf[2][100];
+    int typeId;
+    string termKey, extraVal;
+    while(3==fscanf(lexFile, "< %s , %d , %s >\n",buf[0],&typeId,buf[1])) {
+        termKey = buf[0];
+        if ( symbolTable.find(termKey + "_t") == symbolTable.end() ) {
+            cout<<" Can't Find "<<termKey<<endl;
+            continue;
+        }
+        Term* t = symbolTable.find(termKey+ "_t")->second;
+        queueLex.push( new m_LexGroup( typeId, buf[1], t ) );
+    }
+    cout<<endl<<" LEX Input "<<queueLex.size()<<endl;
+
+    return *this;
+}
+
+LR_Syntax& LR_Syntax::runSyntaxAutoman() {
+///TODO:    自动分析器 开始
+    return *this;
+}
+
 /*书上7.4样例测试AC
 LR_Syntax::Rule m_Syntax_Rule[] = {
     {"_S","S"},{"S","a|A|d"},{"S","b|A|c"},{"S","a|e|c"},{"S","b|e|d"},{"A","e"}
@@ -673,7 +716,13 @@ LR_Syntax::Rule m_Syntax_Rule[] = {
     {"_P","P"},
     {"P","{|D|S|}"},
     {"D","D|int|ID|;"},{"D","int|ID|;"},
-    {"S","if|(|BoolExp|)|then|S|else|S"},{"S","if|(|BoolExp|)|then|S"},{"S","while|(|BoolExp|)|do|S"},{"S","ID|=|CalcExp"},{"S","{|CpxS|}"},
+    {"S","ST"},
+    {"ST","MST"},{"ST","OST"},
+    {"MST","if|(|BoolExp|)|then|MST|else|MST"},
+    {"OST","if|(|BoolExp|)|then|ST"},{"OST","if|(|BoolExp|)|then|MST|else|OST"},
+    /* if-then-else SOLVE http://blog.csdn.net/alwaysslh/article/details/4157348 */
+    /*{"S","if|(|BoolExp|)|then|S|else|S"},{"S","if|(|BoolExp|)|then|S"},*/
+    {"S","while|(|BoolExp|)|do|S"},{"S","ID|=|CalcExp"},{"S","{|CpxS|}"},
     {"CpxS","S|;|CpxS"},{"CpxS","S"},
     {"BoolExp","BoolExp|and|BoolExp"},{"BoolExp","BoolExp|or|BoolExp"},{"BoolExp","ID|relop|ID"},{"BoolExp","ID"},
     {"CalcExp","CalcExp|+|CalcExp"},{"CalcExp","CalcExp|-|CalcExp"},{"CalcExp","CalcExp|*|CalcExp"},{"CalcExp","CalcExp|/|CalcExp"},{"CalcExp","(|CalcExp|)"},{"CalcExp","ID"},{"CalcExp","NUM"},
@@ -681,15 +730,18 @@ LR_Syntax::Rule m_Syntax_Rule[] = {
 };
 
 LR_Syntax::Term m_Syntax_VN[] = {
-    {"int",true},{"if",true},{"then",true},{"else",true},{"while",true},{"do",true},
-    {"ID",true},{"NUM",true},
-    {"+",true},{"-",true},{"*",true},{"/",true},{"and",true},{"or",true},
+    {"int",true,1},{"if",true,2},{"then",true,3},{"else",true,4},{"while",true,5},{"do",true,6},
+    {"ID",true,7,true,},{"NUM",true,8,true},
+    {"+",true,9},{"-",true,10},{"*",true,11},{"/",true,12},{"and",true,13},{"or",true,14},
    /* {"<",true},{">",true},{"<=",true},{">=",true},{"!=",true},{"==",true},*/
-    {"{",true},{"}",true},{";",true},{"(",true},{")",true},{"=",true}/**/,{"relop",true}
+    {"{",true,16},{"}",true,17},{";",true,18},{"(",true,19},{")",true,20},{"=",true,21}/**/,{"relop",true,15,true}
 };
 
 LR_Syntax::Term m_Syntax_VT[] = {
     {"_P",false},{"P",false},{"D",false},{"S",false},{"BoolExp",false},{"CalcExp",false},{"CpxS",false}/*,{"relop",false}*/
+    ,{"ST",false}
+    ,{"MST",false}
+    ,{"OST",false}
 };
 
 vector<LR_Syntax::Rule> v_Syntax_Rule( m_Syntax_Rule, m_Syntax_Rule+sizeof(m_Syntax_Rule)/sizeof(m_Syntax_Rule[0]) );
@@ -705,7 +757,8 @@ int main() {
       //showProduction().
       buildItems().
       buildAnalyticalTable().
-      showIState().
-      buildActionGotoTable();
+      //showIState().
+      buildActionGotoTable().
+      initLEXSymbol("in.txt");
     return 0;
 }
