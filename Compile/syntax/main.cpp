@@ -31,7 +31,7 @@ class LR_Syntax {
             string name;
             bool terminal;
         };
-    public:
+    private:
         struct Production {
             int from;
         };
@@ -76,7 +76,7 @@ class LR_Syntax {
         LR_Syntax& buildAnalyticalTable();
     private:
         int calcClosure(m_IState* );
-        bool matchClosureRule(m_ExtItem&,Term*&,vector<Term*>&);
+        bool matchClosurePattern(m_ExtItem&,Term*&,vector<Term*>&);
     private:
         string ruleDelim;
         map<string,Term*> symbolTable;
@@ -213,7 +213,7 @@ LR_Syntax& LR_Syntax::buildItems() {
     return *this;
 }
 
-bool LR_Syntax::matchClosureRule(m_ExtItem& eI,Term* & N,vector<Term*> & after) {
+bool LR_Syntax::matchClosurePattern(m_ExtItem& eI,Term* & N,vector<Term*> & after) {
     vector<Term*> &term = eI.item->rule->term;
     int step = eI.item->point;
     if ( step<term.size() ) {
@@ -288,7 +288,7 @@ int LR_Syntax::calcClosure(m_IState* sta) {
         m_ExtItem &eItem = **itr;
         Term *n;
         vector<Term*> after;
-        if ( matchClosureRule( eItem, n, after ) ) {
+        if ( matchClosurePattern( eItem, n, after ) ) {
 
             if ( eItem.preTerm ) after.push_back( eItem.preTerm ); //NULL就不加入了
             set<Term*> firstResult;
