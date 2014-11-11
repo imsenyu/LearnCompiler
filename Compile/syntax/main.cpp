@@ -67,6 +67,15 @@ class LR_Syntax {
             int stateID;
             m_IState(int a):stateID(a) {}
         };
+        enum actionType { Step=1,Recur,Gto,Acc,Err };
+        struct m_Action {
+            actionType type;
+            Term* _step;
+            m_Rule* _recur;
+            m_IState* _gto;
+            m_Action():type(Err),_step(NULL),_recur(NULL),_gto(NULL) {}
+        };
+
     public:
         LR_Syntax():ruleDelim("|") {}
         LR_Syntax& initSymbol( vector<LR_Syntax::Term>& );
@@ -74,6 +83,8 @@ class LR_Syntax {
         LR_Syntax& showProduction();
         LR_Syntax& buildItems();
         LR_Syntax& buildAnalyticalTable();
+        LR_Syntax& showIState(int = -1);
+        LR_Syntax& buildActionGotoTable();
     private:
         int calcClosure(m_IState* );
         bool matchClosurePattern(m_ExtItem&,Term*&,vector<Term*>&);
@@ -84,10 +95,15 @@ class LR_Syntax {
         map<Term*, vector<m_Item*>* > itemTable;   //LR项目表
         ///计算I状态封装， 以及 [I*][Term*] => 映射表,边构造映射表边计算新的I
         vector<m_IState*> v_IState;
-        map<m_IState*, map<Term*, m_IState*>* > ATable;
+        map<m_IState*, map<Term*, m_Action*>* > ActionTable;
+        map<m_IState*, map<Term*, m_IState*>* > StateTable;
+
         int bfsFirstSet( vector<Term*>&, set<Term*>& );
         m_Item* itemNextStep(m_Item*);
         int sameIState(m_IState*);
+        bool destroyTmpIState(m_IState*);
+        m_IState* ATableSearch(m_IState*, Term*);
+
 };
 
 
@@ -271,12 +287,12 @@ int LR_Syntax::bfsFirstSet( vector<Term*>& source, set<Term*>& result ) {
 int LR_Syntax::calcClosure(m_IState* sta) {
     ///其中任何一个 ExItem 若有 .Nb, a 遍历 B 的Items ，计算 First( ba )
     /// 把 对应 B的Item,b 加入
-    cout<<endl<<" In Closure"<<endl;
+    //cout<<endl<<" In Closure"<<endl;
     set<m_ExtItem*,ExtItemPtrCmp>::iterator itr;
     m_IState tmp(*sta);
 
     //cout<<"  given IState ";
-    cout<<"  ID = "<<tmp.stateID<<endl;
+    //cout<<"  ID = "<<tmp.stateID<<endl;
     /*for(int i=0;i<tmp.data.size();i++) {
         cout<<"  "<<tmp.data[i]->item->rule->from->name<<" => ";
         tmp.data[i]->item->rule->showTerm(tmp.data[i]->item->point),
@@ -327,7 +343,7 @@ int LR_Syntax::calcClosure(m_IState* sta) {
             ///以上两者乘积 放入sta->data
         }
     }
-    cout<<" All of Closure"<<endl;
+    /*cout<<" All of Closure"<<endl;
     set<m_ExtItem*,ExtItemPtrCmp>::iterator jtr;
     for(jtr=sta->data.begin();jtr!=sta->data.end();jtr++) {
         m_ExtItem &x = **jtr;
@@ -335,7 +351,7 @@ int LR_Syntax::calcClosure(m_IState* sta) {
         x.item->rule->showTerm(x.item->point);
         cout<<" char "<<(x.preTerm?x.preTerm->name:"#")<<endl;
     }
-    cout<<" Out Closure"<<endl<<endl;
+    cout<<" Out Closure"<<endl<<endl;*/
     return sta->data.size();
 }
 LR_Syntax::m_Item* LR_Syntax::itemNextStep(m_Item* s) {
@@ -377,9 +393,18 @@ int LR_Syntax::sameIState(m_IState* s) {
     return 0;
 }
 
+bool LR_Syntax::destroyTmpIState(m_IState* sta) {
+    set<m_ExtItem*,ExtItemPtrCmp>::iterator itr;
+    for(itr=sta->data.begin();itr!=sta->data.end();itr++) {
+        m_ExtItem* add = *itr;
+        delete add;
+    }
+    return true;
+}
+
 LR_Syntax& LR_Syntax::buildAnalyticalTable() {
 ///计算I状态封装， 以及 [I*][Term*] => 映射表,边构造映射表边计算新的I
-/// map<m_IState*, map<Term*, m_IState*>* > ATable;
+/// map<m_IState*, map<Term*, m_IState*>* > StateTable;
 
     int curIState = 0;
     v_IState.clear();
@@ -393,7 +418,7 @@ LR_Syntax& LR_Syntax::buildAnalyticalTable() {
     calcClosure( v_IState[0] );
 
     while( curIState < v_IState.size() ) {
-        cout<<"CUR STEP = "<<curIState<<endl;
+        //cout<<"CUR STEP = "<<curIState<<endl;
         //cin.get();
         map<string,Term*>::iterator itr;
         vector<m_IState*> v_tmp;
@@ -408,16 +433,16 @@ LR_Syntax& LR_Syntax::buildAnalyticalTable() {
                 ///下一个 项 等于 遍历项
                 if ( vItem.rule->term[ vItem.point ] == &y ) {
 
-                    cout<<" X-Term "<<y.name<<endl;
+        /*            cout<<" X-Term "<<y.name<<endl;
                     cout<<" Trans Rule "<<vItem.rule->from->name<<" => ";
                     vItem.rule->showTerm(vItem.point);
                     cout<<((*jtr)->preTerm?(*jtr)->preTerm->name:"#")<<endl;
+        */
 
-
-                    if ( ATable.find(v_IState[curIState]) == ATable.end() ) {
-                        ATable.insert( pair<m_IState*,map<Term*, m_IState*>* >( v_IState[curIState], new map<Term*, m_IState*> ) );
+                    if ( StateTable.find(v_IState[curIState]) == StateTable.end() ) {
+                        StateTable.insert( pair<m_IState*,map<Term*, m_IState*>* >( v_IState[curIState], new map<Term*, m_IState*> ) );
                     }
-                    map<Term*, m_IState*>& tiMap = *ATable.find(v_IState[curIState])->second;
+                    map<Term*, m_IState*>& tiMap = *StateTable.find(v_IState[curIState])->second;
                     //cout<<"NUM"<<v_IState.size()<<endl;
                     bool isNewState = false;
                     if ( tiMap.find(&y) == tiMap.end() ) {
@@ -455,7 +480,8 @@ LR_Syntax& LR_Syntax::buildAnalyticalTable() {
                 v_IState.push_back( v_tmp[i] );
             }
             else {
-                cout<<"  same to "<<notsame<<endl;
+                destroyTmpIState(v_tmp[i]);
+          //      cout<<"  same to "<<notsame<<endl;
                 ///删除 这个state
             }
         }
@@ -464,14 +490,161 @@ LR_Syntax& LR_Syntax::buildAnalyticalTable() {
     ///使用vector 记录IState 编号，记录当前执行编号，和整体数目
     /// while 执行编号< size
     /// 先把 map<string,Term*> symbolTable;
-    /// 然后 按照 m_Item point 匹配 下一个 是否相同，相同则 加入 ATable(不存在new，存在find),new 了之后记得马上加入vector<I*>
+    /// 然后 按照 m_Item point 匹配 下一个 是否相同，相同则 加入 StateTable(不存在new，存在find),new 了之后记得马上加入vector<I*>
+
+    return *this;
+}
+
+LR_Syntax& LR_Syntax::showIState(int index) {
+    if ( index >= 0 && index < v_IState.size() ) {
+        set<m_ExtItem*,ExtItemPtrCmp> &st = v_IState[index]->data;
+        set<m_ExtItem*,ExtItemPtrCmp>::iterator jtr;
+        for(jtr=st.begin();jtr!=st.end();jtr++) {
+            m_ExtItem& eItem = **jtr;
+            cout<<" "<<eItem.item->rule->from->name<<"  char[ "<<(eItem.preTerm?eItem.preTerm->name:"#")<<" ]"<<endl<<"  ";
+            eItem.item->rule->showTerm( eItem.item->point );
+            cout<<endl;
+        }
+        cout<<endl;
+        return *this;
+    }
+
+    vector<m_IState*>::iterator itr;
+    for(itr=v_IState.begin();itr!=v_IState.end();itr++) {
+        m_IState& sta = **itr;
+        set<m_ExtItem*,ExtItemPtrCmp> &st = sta.data;
+        set<m_ExtItem*,ExtItemPtrCmp>::iterator jtr;
+
+        cout<<"IState ID "<<sta.stateID<<" :"<<endl;
+        for(jtr=st.begin();jtr!=st.end();jtr++) {
+            m_ExtItem& eItem = **jtr;
+            cout<<" "<<eItem.item->rule->from->name<<"  char[ "<<(eItem.preTerm?eItem.preTerm->name:"#")<<" ]"<<endl<<"  ";
+            eItem.item->rule->showTerm( eItem.item->point );
+            cout<<endl;
+        }
+        cout<<endl;
+    }
+
+    return *this;
+}
+
+LR_Syntax::m_IState* LR_Syntax::ATableSearch(m_IState* sta, Term* term) {
+
+    if ( StateTable.find(sta) == StateTable.end() ) {
+        return NULL;
+    }
+    else {
+        map<Term*, m_IState*>& tiMap = *StateTable.find(sta)->second;
+        if ( tiMap.find(term) != tiMap.end() ) {
+            return tiMap.find(term)->second;
+        }
+        else {
+            return NULL;
+        }
+    }
+}
+
+LR_Syntax& LR_Syntax::buildActionGotoTable() {
+    ///先对 Term* 遍历，需要添加#
+    ///从 v_IState 0开始遍历, 得到m_IState* 找指针去 看 StateTable中 关于 对应Term*的 状态映射
+    ///如果 IState 的话， 如果Term* 是 non-terminal， 更新到 Gto状态，m_IState*
+    ///如果是 terminal的话，更新到 Step状态 ，Term*
+    ///如果 被遍历的IState中 存在 .在结束位置的项，在对应上面加上 recur标记，冲突则指示出来
+    ///如果是v[1] 对 # 加入  ACC状态
+
+
+    map<string,Term*> symbolWithNull( symbolTable );
+    symbolWithNull.insert( pair<string,Term*>("",NULL) );
+
+    map<string,Term*>::iterator itr;
+    for(itr=symbolTable.begin();itr!=symbolTable.end();itr++) {
+        int stateIndex = 0;
+        Term *termPtr = itr->second;
+        for(stateIndex=0;stateIndex<v_IState.size();stateIndex++) {
+            m_IState* curState = v_IState[stateIndex];
+            m_IState* found;
+            ///如果找到 或者 Term*#都进去
+            //if ( termPtr != NULL  ) {
+            if ( ActionTable.find(curState) == ActionTable.end() ) {
+                ActionTable.insert( pair<m_IState*,map<Term*, m_Action*>* >( curState, new map<Term*, m_Action*> ) );
+            }
+            map<Term*, m_Action*> &acMap = *ActionTable.find(curState)->second;
+            if ( acMap.find(termPtr) == acMap.end() ) {
+                acMap.insert( pair<Term*, m_Action*>( termPtr, new m_Action ) );
+            }
+            m_Action &action = *acMap.find(termPtr)->second;
+            found = ATableSearch( curState, termPtr );
+            if ( termPtr && termPtr->terminal && found ) {
+                /// step
+                action.type = Step;
+                action._step = termPtr;
+            }
+            else if ( found ) {
+                /// gto
+                action.type = Gto;
+                action._gto = found;
+            }
+            else {
+                action.type = Err;
+            }
+        }
+    }
+    ///最后开始添加 Recur 规约规则
+    int stateIndex = 0;
+    for(stateIndex=0;stateIndex<v_IState.size();stateIndex++) {
+        m_IState* curState = v_IState[stateIndex];
+        cout<<"State ID "<<curState->stateID<<endl;
+        ///迭代data
+        set<m_ExtItem*,ExtItemPtrCmp>::iterator itr;
+        bool flag = false;
+        for(itr=curState->data.begin();itr!=curState->data.end();itr++) {
+            m_ExtItem &eItem = **itr;
+            Term *termPtr = eItem.preTerm;
+            if ( eItem.item->point != eItem.item->rule->term.size() ) continue;
+            if ( ActionTable.find(curState) == ActionTable.end() ) {
+                cout<<" ERR:"<<" Recur State Not Found "<<endl;
+                continue;
+                //ActionTable.insert( pair<m_IState*,map<Term*, m_Action*>* >( curState, new map<Term*, m_Action*> ) );
+            }
+            map<Term*, m_Action*> &acMap = *ActionTable.find(curState)->second;
+            if ( acMap.find(termPtr) == acMap.end() ) {
+                if ( termPtr ) {
+                    cout<<" ERR:"<<" Recur Term Not Found ";
+                    cout<<( termPtr?termPtr->name:"#" )<<endl;
+                    continue;
+                }
+                else {
+                    acMap.insert( pair<Term*, m_Action*>( termPtr, new m_Action ) );
+                }
+                //
+            }
+            m_Action &action = *acMap.find(termPtr)->second;
+            if ( action.type != Err ) {
+                    flag = true;
+                cout<<" ERR:"<<" Recur Action Conflict "<< action.type<<endl;
+                if ( action.type = Step ) {
+                    cout<<"   "<<action._step->name<<endl;
+                }
+                continue;
+            }
+            else {
+                action.type = Recur;
+                action._recur = eItem.item->rule;
+            }
+        }
+        if ( flag ) {
+            ///打出该 State 闭包
+            showIState(curState->stateID);
+        }
+
+    }
 
     return *this;
 }
 
 /*书上7.4样例测试AC
 LR_Syntax::Rule m_Syntax_Rule[] = {
-    {"_S","S"},{"S","a|A|d{"S","b|A|c"},{"S","a|e|c"},{"S","b|e|d"},{"A","e"}
+    {"_S","S"},{"S","a|A|d"},{"S","b|A|c"},{"S","a|e|c"},{"S","b|e|d"},{"A","e"}
 };
 
 LR_Syntax::Term m_Syntax_VN[] = {
@@ -480,9 +653,9 @@ LR_Syntax::Term m_Syntax_VN[] = {
 
 LR_Syntax::Term m_Syntax_VT[] = {
     {"_S",false},{"S",false},{"A",false},
-};
-*/
+};*/
 
+/**/
 LR_Syntax::Rule m_Syntax_Rule[] = {
     {"_P","P"},
     {"P","{|D|S|}"},
@@ -518,6 +691,8 @@ int main() {
       initProduction(v_Syntax_Rule).
       //showProduction().
       buildItems().
-      buildAnalyticalTable();
+      buildAnalyticalTable().
+      showIState().
+      buildActionGotoTable();
     return 0;
 }
