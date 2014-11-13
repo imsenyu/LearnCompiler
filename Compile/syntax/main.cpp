@@ -907,13 +907,13 @@ LR_Syntax::Rule m_Syntax_Rule[] = {
     {"_P","P"},
     {"P","{|D|S|}"},
     {"D","D|int|ID|;"},{"D","int|ID|;"},
-    {"S","ST"},
+    {"S","ST"},{"S","NST"},
     {"ST","MST"},{"ST","OST"},
-    {"MST","if|(|BEp|)|then|MST|else|MST"},
+    {"MST","if|(|BEp|)|then|MST|else|MST"},{"MST","{|CS|}"},
     {"OST","if|(|BEp|)|then|ST"},{"OST","if|(|BEp|)|then|MST|else|OST"},
     // if-then-else SOLVE http://blog.csdn.net/alwaysslh/article/details/4157348
     //{"S","if|(|BEp|)|then|S|else|S"},{"S","if|(|BEp|)|then|S"},
-    {"S","while|(|BEp|)|do|S"},{"S","ID|=|CEp"},{"S","{|CS|}"},
+    {"NST","while|(|BEp|)|do|CS"},{"NST","ID|=|CEp"},{"NST","{|CS|}"},
     {"CS","S|;|CS"},{"CS","S"},
     {"BEp","BET"},{"BEp","BEp|or|BET"},
     {"BET","BEF"},{"BET","BET|and|BEF"},
@@ -936,6 +936,7 @@ LR_Syntax::Term m_Syntax_VN[] = {
     {"_P",false},{"P",false},{"D",false},{"S",false},{"BEp",false},{"BET",false},{"BEF",false},{"CEp",false},{"CET",false},{"CEF",false},{"CS",false}
     //,{"relop",false}
     ,{"ST",false}
+    ,{"NST",false}
     ,{"MST",false}
     ,{"OST",false}
 };
