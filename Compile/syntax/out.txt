@@ -1,0 +1,173 @@
+Production
+ Rule[0]: _S0 => S0   
+ Rule[1]: S0 => a1   A0   d1   
+ Rule[2]: S0 => b1   A0   c1   
+ Rule[3]: S0 => a1   e1   c1   
+ Rule[4]: S0 => b1   e1   d1   
+ Rule[5]: A0 => e1   
+[0] _S => [#]   S0   
+[1] _S => S0   [#]   
+[2] S => [#]   a1   A0   d1   
+[3] S => a1   [#]   A0   d1   
+[4] S => a1   A0   [#]   d1   
+[5] S => a1   A0   d1   [#]   
+[6] S => [#]   b1   A0   c1   
+[7] S => b1   [#]   A0   c1   
+[8] S => b1   A0   [#]   c1   
+[9] S => b1   A0   c1   [#]   
+[10] S => [#]   a1   e1   c1   
+[11] S => a1   [#]   e1   c1   
+[12] S => a1   e1   [#]   c1   
+[13] S => a1   e1   c1   [#]   
+[14] S => [#]   b1   e1   d1   
+[15] S => b1   [#]   e1   d1   
+[16] S => b1   e1   [#]   d1   
+[17] S => b1   e1   d1   [#]   
+[18] A => [#]   e1   
+[19] A => e1   [#]   
+CUR STEP = 0
+ X-Term S
+ Trans Rule _S => [#]   S0   #
+ X-Term a
+ Trans Rule S => [#]   a1   A0   d1   #
+ X-Term a
+ Trans Rule S => [#]   a1   e1   c1   #
+ X-Term b
+ Trans Rule S => [#]   b1   A0   c1   #
+ X-Term b
+ Trans Rule S => [#]   b1   e1   d1   #
+  not same 1
+  not same 2
+  not same 3
+CUR STEP = 1
+CUR STEP = 2
+ X-Term A
+ Trans Rule S => a1   [#]   A0   d1   #
+ X-Term e
+ Trans Rule S => a1   [#]   e1   c1   #
+ X-Term e
+ Trans Rule A => [#]   e1   d
+  not same 4
+  not same 5
+CUR STEP = 3
+ X-Term A
+ Trans Rule S => b1   [#]   A0   c1   #
+ X-Term e
+ Trans Rule S => b1   [#]   e1   d1   #
+ X-Term e
+ Trans Rule A => [#]   e1   c
+  not same 6
+  not same 7
+CUR STEP = 4
+ X-Term d
+ Trans Rule S => a1   A0   [#]   d1   #
+  not same 8
+CUR STEP = 5
+ X-Term c
+ Trans Rule S => a1   e1   [#]   c1   #
+  not same 9
+CUR STEP = 6
+ X-Term c
+ Trans Rule S => b1   A0   [#]   c1   #
+  not same 10
+CUR STEP = 7
+ X-Term d
+ Trans Rule S => b1   e1   [#]   d1   #
+  not same 11
+CUR STEP = 8
+CUR STEP = 9
+CUR STEP = 10
+CUR STEP = 11
+IState ID 0 :
+ _S  char[ # ]
+  [#]   S0   
+ S  char[ # ]
+  [#]   a1   A0   d1   
+ S  char[ # ]
+  [#]   b1   A0   c1   
+ S  char[ # ]
+  [#]   a1   e1   c1   
+ S  char[ # ]
+  [#]   b1   e1   d1   
+
+IState ID 1 :
+ _S  char[ # ]
+  S0   [#]   
+
+IState ID 2 :
+ S  char[ # ]
+  a1   [#]   A0   d1   
+ S  char[ # ]
+  a1   [#]   e1   c1   
+ A  char[ d ]
+  [#]   e1   
+
+IState ID 3 :
+ S  char[ # ]
+  b1   [#]   A0   c1   
+ S  char[ # ]
+  b1   [#]   e1   d1   
+ A  char[ c ]
+  [#]   e1   
+
+IState ID 4 :
+ S  char[ # ]
+  a1   A0   [#]   d1   
+
+IState ID 5 :
+ S  char[ # ]
+  a1   e1   [#]   c1   
+ A  char[ d ]
+  e1   [#]   
+
+IState ID 6 :
+ S  char[ # ]
+  b1   A0   [#]   c1   
+
+IState ID 7 :
+ S  char[ # ]
+  b1   e1   [#]   d1   
+ A  char[ c ]
+  e1   [#]   
+
+IState ID 8 :
+ S  char[ # ]
+  a1   A0   d1   [#]   
+
+IState ID 9 :
+ S  char[ # ]
+  a1   e1   c1   [#]   
+
+IState ID 10 :
+ S  char[ # ]
+  b1   A0   c1   [#]   
+
+IState ID 11 :
+ S  char[ # ]
+  b1   e1   d1   [#]   
+
+State ID 0
+State ID 1
+State ID 2
+State ID 3
+State ID 4
+State ID 5
+State ID 6
+State ID 7
+State ID 8
+State ID 9
+State ID 10
+State ID 11
+		#	A	S	_S	a	b	c	d	e
+sta-0	 	 	G1	 	S2	S3	 	 	 	
+sta-1	R0	 	 	 	 	 	 	 	 	
+sta-2	 	G4	 	 	 	 	 	 	S5	
+sta-3	 	G6	 	 	 	 	 	 	S7	
+sta-4	 	 	 	 	 	 	 	S8	 	
+sta-5	 	 	 	 	 	 	S9	R5	 	
+sta-6	 	 	 	 	 	 	S10	 	 	
+sta-7	 	 	 	 	 	 	R5	S11	 	
+sta-8	R1	 	 	 	 	 	 	 	 	
+sta-9	R3	 	 	 	 	 	 	 	 	
+sta-10	R2	 	 	 	 	 	 	 	 	
+sta-11	R4	 	 	 	 	 	 	 	 	
