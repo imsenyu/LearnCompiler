@@ -463,7 +463,7 @@ LR_Syntax& LR_Syntax::buildAnalyticalTable() {
     fullCalcClosure( v_IState[0] );
 
     while( curIState < v_IState.size() ) {
-        cout<<"CUR STEP = "<<curIState<<endl;
+        //cout<<"CUR STEP = "<<curIState<<endl;
         //cin.get();
         map<string,Term*>::iterator itr;
         vector<m_IState*> v_tmp;
@@ -479,12 +479,12 @@ LR_Syntax& LR_Syntax::buildAnalyticalTable() {
                 if ( vItem.point >= vItem.rule->term.size() ) continue;
                 ///下一个 项 等于 遍历项
                 if ( vItem.rule->term[ vItem.point ] == &y ) {
-
+                /*
                     cout<<" X-Term "<<y.name<<endl;
                     cout<<" Trans Rule "<<vItem.rule->from->name<<" => ";
                     vItem.rule->showTerm(vItem.point);
                     cout<<((*jtr)->preTerm?(*jtr)->preTerm->name:"#")<<endl;
-
+                */
 
                     if ( StateTable.find(v_IState[curIState]) == StateTable.end() ) {
                         StateTable.insert( pair<m_IState*,map<Term*, m_IState*>* >( v_IState[curIState], new map<Term*, m_IState*> ) );
@@ -528,14 +528,14 @@ LR_Syntax& LR_Syntax::buildAnalyticalTable() {
             ///注 ：如果和 0 状态same的话，理论上应该是 产生式写错，所以先不考虑这种情况
             if ( !(notsame = sameIState( v_tmp[i] )) ) {
                 v_IState.push_back( v_tmp[i] );
-                cout<<"  not same "<<v_tmp[i]->stateID<<endl;
+               // cout<<"  not same "<<v_tmp[i]->stateID<<endl;
                 ///
             }
             else {
                 destroyTmpIState(v_tmp[i]);
                 /// 设置映射关系
                 StateTable.find(map_X[i])->second->find(map_Y[i])->second = v_IState[notsame];
-                cout<<"  same to "<<notsame<<endl;
+               // cout<<"  same to "<<notsame<<endl;
                 ///删除 这个state
             }
         }
@@ -915,8 +915,12 @@ LR_Syntax::Rule m_Syntax_Rule[] = {
     //{"S","if|(|BEp|)|then|S|else|S"},{"S","if|(|BEp|)|then|S"},
     {"S","while|(|BEp|)|do|S"},{"S","ID|=|CEp"},{"S","{|CS|}"},
     {"CS","S|;|CS"},{"CS","S"},
-    {"BEp","BEp|and|BEp"},{"BEp","BEp|or|BEp"},{"BEp","ID|relop|ID"},{"BEp","ID"},
-    {"CEp","CEp|+|CEp"},{"CEp","CEp|-|CEp"},{"CEp","CEp|*|CEp"},{"CEp","CEp|/|CEp"},{"CEp","(|CEp|)"},{"CEp","ID"},{"CEp","NUM"},
+    {"BEp","BET"},{"BEp","BEp|or|BET"},
+    {"BET","BEF"},{"BET","BET|and|BEF"},
+    {"BEF","CEp|relop|CEp"},{"BEF","CEp"},
+    {"CEp","CET"},{"CEp","CEp|+|CET"},{"CEp","CEp|-|CET"},
+    {"CET","CEF"},{"CET","CET|*|CEF"},{"CET","CET|/|CEF"},
+    {"CEF","ID"},{"CEF","NUM"},{"CEF","(|CEp|)"}
   //  {"relop","<"},{"relop",">"},{"relop","<="},{"relop",">="},{"relop","!="},{"relop","=="}
 };
 
@@ -929,7 +933,7 @@ LR_Syntax::Term m_Syntax_VT[] = {
 };
 
 LR_Syntax::Term m_Syntax_VN[] = {
-    {"_P",false},{"P",false},{"D",false},{"S",false},{"BEp",false},{"CEp",false},{"CS",false}
+    {"_P",false},{"P",false},{"D",false},{"S",false},{"BEp",false},{"BET",false},{"BEF",false},{"CEp",false},{"CET",false},{"CEF",false},{"CS",false}
     //,{"relop",false}
     ,{"ST",false}
     ,{"MST",false}

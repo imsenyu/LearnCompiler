@@ -2,7 +2,7 @@
        int a; int b;
        {
        a=10;
-       if (a>0) then
+       if ( a > 0 ) then
        b=a
        }
           a=10
