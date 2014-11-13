@@ -291,7 +291,7 @@ void DFA::matchToken(const string &buf, finishElement f) {
 int main() {
 
     freopen("in.txt","r",stdin);
-    freopen("out.txt","w",stdout);
+    freopen("lex.txt","w",stdout);
 
     DFA dfa;
     dfa.

@@ -756,6 +756,7 @@ LR_Syntax& LR_Syntax::showAGTable() {
 }
 
 void LR_Syntax::autoSolveConflict( map<Term*, m_Action*> & acMap, Term* termPtr, m_ExtItem& eItem ) {
+    return;
     if ( acMap.find(termPtr) == acMap.end() ) {
         acMap.insert( pair<Term*, m_Action*>( termPtr, new m_Action ) );
     }
@@ -809,30 +810,55 @@ LR_Syntax& LR_Syntax::runSyntaxAutoman() {
     int stepCnt=1;
     int stateTop=0;
     Term* termTop=NULL;
-
+    m_LexGroup* token;
     stateStack.push(0);
     termStack.push(NULL);
-    while ( !stateStack.empty() && !termStack.empty() ) {
+    while ( !stateStack.empty() && !queueLex.empty() ) {
         stateTop = stateStack.top();
         termTop = termStack.top();
+        token = queueLex.front();
         m_IState* curState = v_IState[ stateTop ];
-        m_Action* action = ActionTableSearch( curState, termTop );
+        m_Action* action = ActionTableSearch( curState, token->term );
+        m_Rule* rule;
         if ( action == NULL ) {
-            cout<<" Can't Find Action "<<curState->stateID<<" "<<termTop<<endl;
+            cout<<" Can't Find Action "<<curState->stateID<<" "<<token->term->name<<endl;
         }
         else {
             switch(action->type) {
             case Err:
-                cout<<" Action ERR";
+                cout<<" Action ERR "<<curState->stateID<<endl;
+                showIState(curState->stateID);
+                cout<<endl<<" match "<<token->term->name<<endl;
+                exit(-1);
                 ///遇到错误，然后考虑怎么跳错
                 break;
             case Step:
                 ///移近,
+                cout<<" Step "<< token->term->name<<" "<< token->term->extra<<endl;
                 stateStack.push( action->_step->stateID );
-                termStack.push( termTop );
+                termStack.push( token->term );
+                queueLex.pop();
                 break;
             case Recur:
+                ///规约
+                rule = action->_recur;
+                cout<<" Recur ["<<rule->term.size()<<"] To "<<rule->from->name;
+                for(int rec=0;rec<rule->term.size();rec++) {
+                    stateStack.pop();
+                    termStack.pop();
+                }
+                termStack.push(rule->from);
 
+                stateTop = stateStack.top();
+                curState = v_IState[ stateTop ];
+                action = ActionTableSearch( curState, rule->from);
+                if ( action == NULL || action->type!=Gto) {
+                    cout<<" goto Can't Find "<<endl;
+                }
+                else {
+                    cout<<" statePush "<<action->_gto->stateID<<endl;
+                    stateStack.push( action->_gto->stateID );
+                }
                 break;
             case Gto:
 
@@ -883,23 +909,23 @@ LR_Syntax::Rule m_Syntax_Rule[] = {
     {"D","D|int|ID|;"},{"D","int|ID|;"},
     {"S","ST"},
     {"ST","MST"},{"ST","OST"},
-    {"MST","if|(|BEp|)|thn|MST|els|MST"},
-    {"OST","if|(|BEp|)|thn|ST"},{"OST","if|(|BEp|)|thn|MST|els|OST"},
+    {"MST","if|(|BEp|)|then|MST|else|MST"},
+    {"OST","if|(|BEp|)|then|ST"},{"OST","if|(|BEp|)|then|MST|else|OST"},
     // if-then-else SOLVE http://blog.csdn.net/alwaysslh/article/details/4157348
     //{"S","if|(|BEp|)|then|S|else|S"},{"S","if|(|BEp|)|then|S"},
-    {"S","whl|(|BEp|)|do|S"},{"S","ID|=|CEp"},{"S","{|CS|}"},
+    {"S","while|(|BEp|)|do|S"},{"S","ID|=|CEp"},{"S","{|CS|}"},
     {"CS","S|;|CS"},{"CS","S"},
-    {"BEp","BEp|and|BEp"},{"BEp","BEp|or|BEp"},{"BEp","ID|rlp|ID"},{"BEp","ID"},
+    {"BEp","BEp|and|BEp"},{"BEp","BEp|or|BEp"},{"BEp","ID|relop|ID"},{"BEp","ID"},
     {"CEp","CEp|+|CEp"},{"CEp","CEp|-|CEp"},{"CEp","CEp|*|CEp"},{"CEp","CEp|/|CEp"},{"CEp","(|CEp|)"},{"CEp","ID"},{"CEp","NUM"},
   //  {"relop","<"},{"relop",">"},{"relop","<="},{"relop",">="},{"relop","!="},{"relop","=="}
 };
 
 LR_Syntax::Term m_Syntax_VT[] = {
-    {"int",true,1},{"if",true,2},{"thn",true,3},{"els",true,4},{"whl",true,5},{"do",true,6},
+    {"int",true,1},{"if",true,2},{"then",true,3},{"else",true,4},{"while",true,5},{"do",true,6},
     {"ID",true,7,true,},{"NUM",true,8,true},
     {"+",true,9},{"-",true,10},{"*",true,11},{"/",true,12},{"and",true,13},{"or",true,14},
    // {"<",true},{">",true},{"<=",true},{">=",true},{"!=",true},{"==",true},
-    {"{",true,16},{"}",true,17},{";",true,18},{"(",true,19},{")",true,20},{"=",true,21},{"rlp",true,15,true}
+    {"{",true,16},{"}",true,17},{";",true,18},{"(",true,19},{")",true,20},{"=",true,21},{"relop",true,15,true}
 };
 
 LR_Syntax::Term m_Syntax_VN[] = {
@@ -927,8 +953,8 @@ int main() {
       buildAnalyticalTable().
       showIState().
       buildActionGotoTable().
-      showAGTable();
-      //initLEXSymbol("in.txt");
-      //runSyntaxAutoman();
+      showAGTable().
+      initLEXSymbol("lex.txt").
+      runSyntaxAutoman();
     return 0;
 }
