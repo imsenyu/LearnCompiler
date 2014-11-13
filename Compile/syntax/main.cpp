@@ -87,6 +87,7 @@ class LR_Syntax {
             m_LexGroup(int a,char*b, Term* c=NULL):typeId(a),term(c) {
                 if ( b[0]!='_' || b[1] != 0 ) {
                     extra = b;
+                    cout<<extra<<endl;
                 }
             }
         };
@@ -834,7 +835,7 @@ LR_Syntax& LR_Syntax::runSyntaxAutoman() {
                 break;
             case Step:
                 ///移近,
-                cout<<" Step "<< token->term->name<<" "<< token->term->extra<<endl;
+                cout<<" Step "<< token->term->name<<" "<< token->extra<<endl;
                 stateStack.push( action->_step->stateID );
                 termStack.push( token->term );
                 queueLex.pop();
@@ -869,9 +870,6 @@ LR_Syntax& LR_Syntax::runSyntaxAutoman() {
             default:break;
             }
         }
-
-
-
     }
     return *this;
 }
@@ -907,13 +905,12 @@ LR_Syntax::Rule m_Syntax_Rule[] = {
     {"_P","P"},
     {"P","{|D|S|}"},
     {"D","D|int|ID|;"},{"D","int|ID|;"},
-    {"S","ST"},{"S","NST"},
+    {"S","ST"},
     {"ST","MST"},{"ST","OST"},
     {"MST","if|(|BEp|)|then|MST|else|MST"},{"MST","{|CS|}"},
     {"OST","if|(|BEp|)|then|ST"},{"OST","if|(|BEp|)|then|MST|else|OST"},
     // if-then-else SOLVE http://blog.csdn.net/alwaysslh/article/details/4157348
-    //{"S","if|(|BEp|)|then|S|else|S"},{"S","if|(|BEp|)|then|S"},
-    {"NST","while|(|BEp|)|do|CS"},{"NST","ID|=|CEp"},{"NST","{|CS|}"},
+    {"S","while|(|BEp|)|do|CS"},{"S","ID|=|CEp"},{"S","{|CS|}"},
     {"CS","S|;|CS"},{"CS","S"},
     {"BEp","BET"},{"BEp","BEp|or|BET"},
     {"BET","BEF"},{"BET","BET|and|BEF"},
@@ -921,22 +918,18 @@ LR_Syntax::Rule m_Syntax_Rule[] = {
     {"CEp","CET"},{"CEp","CEp|+|CET"},{"CEp","CEp|-|CET"},
     {"CET","CEF"},{"CET","CET|*|CEF"},{"CET","CET|/|CEF"},
     {"CEF","ID"},{"CEF","NUM"},{"CEF","(|CEp|)"}
-  //  {"relop","<"},{"relop",">"},{"relop","<="},{"relop",">="},{"relop","!="},{"relop","=="}
 };
 
 LR_Syntax::Term m_Syntax_VT[] = {
     {"int",true,1},{"if",true,2},{"then",true,3},{"else",true,4},{"while",true,5},{"do",true,6},
     {"ID",true,7,true,},{"NUM",true,8,true},
     {"+",true,9},{"-",true,10},{"*",true,11},{"/",true,12},{"and",true,13},{"or",true,14},
-   // {"<",true},{">",true},{"<=",true},{">=",true},{"!=",true},{"==",true},
     {"{",true,16},{"}",true,17},{";",true,18},{"(",true,19},{")",true,20},{"=",true,21},{"relop",true,15,true}
 };
 
 LR_Syntax::Term m_Syntax_VN[] = {
     {"_P",false},{"P",false},{"D",false},{"S",false},{"BEp",false},{"BET",false},{"BEF",false},{"CEp",false},{"CET",false},{"CEF",false},{"CS",false}
-    //,{"relop",false}
     ,{"ST",false}
-    ,{"NST",false}
     ,{"MST",false}
     ,{"OST",false}
 };
