@@ -91,6 +91,7 @@ DFA_Token m_DFA_Token[] = {
     {T_ID, 4, "else", NVAL},
     {T_ID, 5, "while", NVAL},
     {T_ID, 6, "do", NVAL},
+    {T_ID, 22, "endif", NVAL},
     {T_ID, 7, "ID", AVAL},
     {T_NUM, 8, "NUM", AVAL},
     {T_OP, 9, "+", NVAL},

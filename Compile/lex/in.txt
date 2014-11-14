@@ -3,17 +3,18 @@
        a=10;
 
           if (a>0) then
-         {
+
           b=a;
-          }
 
-          else {
-          b=(a-1);
 
-          }
+          else
+          b=a-1;
+
+
 
             while(a<=10 and a>5) do{
-            a = (b +1);
+            a = b +1;
+            c=a+3;
             }
        }
 

@@ -87,7 +87,7 @@ class LR_Syntax {
             m_LexGroup(int a,char*b, Term* c=NULL):typeId(a),term(c) {
                 if ( b[0]!='_' || b[1] != 0 ) {
                     extra = b;
-                    cout<<extra<<endl;
+                    //cout<<extra<<endl;
                 }
             }
         };
@@ -920,11 +920,9 @@ LR_Syntax::Rule m_Syntax_Rule[] = {
     {"_P","P"},
     {"P","{|D|CS|}"},
     {"D","D|int|ID|;"},{"D","int|ID|;"},
-    {"S","ST"},{"S","NST"},
-    {"ST","if|(|BEp|)|then|S|else|S"},
-    {"ST","if|(|BEp|)|then|S"},
-    // if-then-else SOLVE http://blog.csdn.net/alwaysslh/article/details/4157348
-    {"NST","while|(|BEp|)|do|S"},{"NST","ID|=|CEp|;"},{"NST","{|CS|}"},
+    {"S","if|(|BEp|)|then|S|else|S"},
+    {"S","if|(|BEp|)|then|S"},
+    {"S","while|(|BEp|)|do|S"},{"S","ID|=|CEp|;"},{"S","{|CS|}"},
     {"CS","S|CS"},{"CS","S"},
     {"BEp","BET"},{"BEp","BEp|or|BET"},
     {"BET","BEF"},{"BET","BET|and|BEF"},
@@ -943,10 +941,6 @@ LR_Syntax::Term m_Syntax_VT[] = {
 
 LR_Syntax::Term m_Syntax_VN[] = {
     {"_P",false},{"P",false},{"D",false},{"S",false},{"BEp",false},{"BET",false},{"BEF",false},{"CEp",false},{"CET",false},{"CEF",false},{"CS",false}
-    ,{"ST",false}
-    ,{"MST",false}
-    ,{"NST",false}
-    ,{"OST",false}
 };
 
 vector<LR_Syntax::Rule> v_Syntax_Rule( m_Syntax_Rule, m_Syntax_Rule+sizeof(m_Syntax_Rule)/sizeof(m_Syntax_Rule[0]) );
