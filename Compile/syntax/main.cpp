@@ -900,15 +900,29 @@ LR_Syntax::Term m_Syntax_VN[] = {
     {"_S",false},{"S",false},{"B",false},
 };*/
 
+/*书上p164 空元素 错误，需要修改宽搜
+LR_Syntax::Rule m_Syntax_Rule[] = {
+    {"_S","S"},{"S","A|d|D"},{"S",""},
+    {"A","a|A|d"},{"A",""},
+    {"D","D|a|A"},{"D","b"},{"D",""}
+};
+
+LR_Syntax::Term m_Syntax_VT[] = {
+    {"a",true},{"b",true},{"d",true}
+};
+
+LR_Syntax::Term m_Syntax_VN[] = {
+    {"_S",false},{"S",false},{"A",false},{"D",false}
+};*/
+
 /**/
 LR_Syntax::Rule m_Syntax_Rule[] = {
     {"_P","P"},
     {"P","{|D|CS|}"},
     {"D","D|int|ID|;"},{"D","int|ID|;"},
-    {"S","ST"},
-    {"ST","MST"},{"ST","OST"},
-    {"MST","if|(|BEp|)|then|MST|else|MST"},{"MST","NST"},
-    {"OST","if|(|BEp|)|then|OST"},{"OST","if|(|BEp|)|then|MST|else|OST"},
+    {"S","ST"},{"S","NST"},
+    {"ST","if|(|BEp|)|then|S|else|S"},
+    {"ST","if|(|BEp|)|then|S"},
     // if-then-else SOLVE http://blog.csdn.net/alwaysslh/article/details/4157348
     {"NST","while|(|BEp|)|do|S"},{"NST","ID|=|CEp|;"},{"NST","{|CS|}"},
     {"CS","S|CS"},{"CS","S"},
