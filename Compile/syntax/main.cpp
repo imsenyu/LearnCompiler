@@ -903,15 +903,15 @@ LR_Syntax::Term m_Syntax_VN[] = {
 /**/
 LR_Syntax::Rule m_Syntax_Rule[] = {
     {"_P","P"},
-    {"P","{|D|S|}"},
+    {"P","{|D|CS|}"},
     {"D","D|int|ID|;"},{"D","int|ID|;"},
     {"S","ST"},
     {"ST","MST"},{"ST","OST"},
-    {"MST","if|(|BEp|)|then|MST|else|MST"},{"MST","{|CS|}"},
-    {"OST","if|(|BEp|)|then|ST"},{"OST","if|(|BEp|)|then|MST|else|OST"},
+    {"MST","if|(|BEp|)|then|MST|else|MST"},{"MST","NST"},
+    {"OST","if|(|BEp|)|then|OST"},{"OST","if|(|BEp|)|then|MST|else|OST"},
     // if-then-else SOLVE http://blog.csdn.net/alwaysslh/article/details/4157348
-    {"S","while|(|BEp|)|do|CS"},{"S","ID|=|CEp"},{"S","{|CS|}"},
-    {"CS","S|;|CS"},{"CS","S"},
+    {"NST","while|(|BEp|)|do|S"},{"NST","ID|=|CEp|;"},{"NST","{|CS|}"},
+    {"CS","S|CS"},{"CS","S"},
     {"BEp","BET"},{"BEp","BEp|or|BET"},
     {"BET","BEF"},{"BET","BET|and|BEF"},
     {"BEF","CEp|relop|CEp"},{"BEF","CEp"},
@@ -931,6 +931,7 @@ LR_Syntax::Term m_Syntax_VN[] = {
     {"_P",false},{"P",false},{"D",false},{"S",false},{"BEp",false},{"BET",false},{"BEF",false},{"CEp",false},{"CET",false},{"CEF",false},{"CS",false}
     ,{"ST",false}
     ,{"MST",false}
+    ,{"NST",false}
     ,{"OST",false}
 };
 
