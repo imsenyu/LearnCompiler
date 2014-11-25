@@ -2,7 +2,7 @@
        int a; int b;
        a=10;
 
-          if (a>0) then
+          if (a>0.2) then
 
           b=a;
 
@@ -12,7 +12,7 @@
 
 
 
-            while(a<=10 and a>5) do{
+            while(a<=0 and a>5) do{
             a = b +1;
             c=a+3;
             }
