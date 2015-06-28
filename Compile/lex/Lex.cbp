@@ -33,6 +33,7 @@
 			<Add option="-fexceptions" />
 		</Compiler>
 		<Unit filename="in.txt" />
+		<Unit filename="lex.txt" />
 		<Unit filename="main.cpp" />
 		<Unit filename="out.txt" />
 		<Extensions>

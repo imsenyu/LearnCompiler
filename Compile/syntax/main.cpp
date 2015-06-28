@@ -277,12 +277,13 @@ bool LR_Syntax::matchClosurePattern(m_ExtItem& eI,Term* & N,vector<Term*> & afte
     }
 }
 
+
 int LR_Syntax::bfsFirstSet( vector<Term*>& source, set<Term*>& result ) {
     ///从 source 中取 [0] 空就算了，如果是 N下一步 ，T push return
     ///扔到queue中，去productionTable中查 所有rule
     ///对 每个rule.term 这个vector 取 [0] N则扔到 queue中，T则push
     /// 用map<rule*, bool> 记录 是否遍历过
-    ///!!!不支持 查找 含有 空规则 的 产生式！ 空规则 需要使用 dfa查找，bfs不记录路径不能回溯
+    ///!!!不支持 查找 含有 空规则 的 产生式！ 空规则 需要使用 dfs查找，bfs不记录路径不能回溯
     if ( source.size() == 0 ) return 0;
     if ( source[0]->terminal ) {
         result.insert( source[0] );
@@ -814,10 +815,24 @@ LR_Syntax& LR_Syntax::runSyntaxAutoman() {
     m_LexGroup* token;
     stateStack.push(0);
     termStack.push(NULL);
-    while ( !stateStack.empty() && !queueLex.empty() ) {
+    while ( !stateStack.empty()  ) {
+        stack<int> tS = stateStack;
+        printf(" %d %d |",queueLex.size(),termStack.size() );
+        while( !tS.empty() ) {
+            printf("%d,",tS.top());
+            tS.pop();
+        }
+        printf("\n");
+
         stateTop = stateStack.top();
         termTop = termStack.top();
-        token = queueLex.front();
+
+        ///在构造ActionGoto表的时候没有放进去Acc设置，所以目前规约到最后会成为R0,然后报错
+        if ( !queueLex.empty() )
+            token = queueLex.front();
+        else
+            token = new m_LexGroup(0,"###",NULL);
+        //token = queueLex.front();
         m_IState* curState = v_IState[ stateTop ];
         m_Action* action = ActionTableSearch( curState, token->term );
         m_Rule* rule;
@@ -859,6 +874,7 @@ LR_Syntax& LR_Syntax::runSyntaxAutoman() {
                 else {
                     cout<<" statePush "<<action->_gto->stateID<<endl;
                     stateStack.push( action->_gto->stateID );
+
                 }
                 break;
             case Gto:
@@ -887,7 +903,7 @@ LR_Syntax::Term m_Syntax_VN[] = {
     {"_S",false},{"S",false},{"A",false},
 };*/
 
-/*书上p146
+/*书上p146*/
 LR_Syntax::Rule m_Syntax_Rule[] = {
     {"_S","S"},{"S","B|B"},{"B","a|B"},{"B","b"}
 };
@@ -898,7 +914,7 @@ LR_Syntax::Term m_Syntax_VT[] = {
 
 LR_Syntax::Term m_Syntax_VN[] = {
     {"_S",false},{"S",false},{"B",false},
-};*/
+};
 
 /*书上p164 空元素 错误，需要修改宽搜
 LR_Syntax::Rule m_Syntax_Rule[] = {
@@ -913,9 +929,9 @@ LR_Syntax::Term m_Syntax_VT[] = {
 
 LR_Syntax::Term m_Syntax_VN[] = {
     {"_S",false},{"S",false},{"A",false},{"D",false}
-};*/
-
-/**/
+};
+*/
+/*
 LR_Syntax::Rule m_Syntax_Rule[] = {
     {"_P","P"},
     {"P","{|D|CS|}"},
@@ -942,6 +958,27 @@ LR_Syntax::Term m_Syntax_VT[] = {
 LR_Syntax::Term m_Syntax_VN[] = {
     {"_P",false},{"P",false},{"D",false},{"S",false},{"BEp",false},{"BET",false},{"BEF",false},{"CEp",false},{"CET",false},{"CEF",false},{"CS",false}
 };
+*/
+/*
+LR_Syntax::Rule m_Syntax_Rule[] = {
+    {"_S","S"},
+    {"S","U|N"},{"S","N"},
+    {"U","_U"},{"U","U|_U"},
+    {"N","_N"},{"N", "N|_N"},
+    {"_U","using|M|;"},
+    {"M","id"},{"M","M|.|id"},
+    {"_N","namespace|id|B"},
+    {"B","{|N|}"},{"B","{|}"}
+};
+
+LR_Syntax::Term m_Syntax_VT[] = {
+    {"using",true,1},{";",true,2},{"id",true,3},{".",true,4},{"namespace",true,5},{"{",true,6},{"}",true,7}
+};
+
+LR_Syntax::Term m_Syntax_VN[] = {
+    {"_S",false},{"S",false},{"U",false},{"N",false},{"_U",false},{"_N",false},{"M",false},{"B",false}
+};
+*/
 
 vector<LR_Syntax::Rule> v_Syntax_Rule( m_Syntax_Rule, m_Syntax_Rule+sizeof(m_Syntax_Rule)/sizeof(m_Syntax_Rule[0]) );
 vector<LR_Syntax::Term> v_Syntax_VN( m_Syntax_VN, m_Syntax_VN+sizeof(m_Syntax_VN)/sizeof(m_Syntax_VN[0]) );
@@ -961,7 +998,7 @@ int main() {
       showIState().
       buildActionGotoTable().
       showAGTable().
-      initLEXSymbol("lex.txt").
+      initLEXSymbol("in.txt").
       runSyntaxAutoman();
     return 0;
 }

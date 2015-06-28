@@ -1,20 +1,13 @@
-   {
-       int a; int b;
-       a=10;
-
-          if (a>0.2) then
-
-          b=a;
-
-
-          else
-          b=a-1;
-
-
-
-            while(a<=0 and a>5) do{
-            a = b +1;
-            c=a+3;
-            }
-       }
+{
+    int a; int b;
+    a=10;
+    if (a>0.2) then
+        b=a;
+    else
+        b=a-1;
+    while(a<=0 and a>5) do{
+        a = b +1;
+        c=a+3;
+    }
+}
 
