@@ -1,7 +1,8 @@
-#ifndef CLUTILS_H_INCLUDED
+﻿#ifndef CLUTILS_H_INCLUDED
 #define CLUTILS_H_INCLUDED
 
 #include <map>
+#include <iterator>
 
 using namespace std;
 
@@ -13,6 +14,24 @@ private:
     mapRowCol data;
 public:
     D2Map() {}
+    typename mapRowCol::iterator begin() {
+        return data.begin();
+    }
+    typename mapRowCol::iterator end() {
+        return data.end();
+    }
+
+    typename mapCol::iterator colBegin( _Row& row) {
+        typename mapRowCol::iterator rter = data.find( row );
+        if ( rter == data.end() ) return rter;
+        return rter->second.begin();
+    }
+    typename mapCol::iterator colEnd( _Row& row ) {
+        typename mapRowCol::iterator rter = data.find( row );
+        if ( rter == data.end() ) return rter;
+        return rter->second.end();
+    }
+
     bool add( _Row& row, _Col& col, _Ele ele, bool _replace = true ) {
         typename mapRowCol::iterator rter = data.find( row );
         if ( rter == data.end() ) {

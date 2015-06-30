@@ -140,6 +140,7 @@ private:
         ///根据after中的一个个开始扫描
 
         ///如果你能找到 true就反
+        ///还需要记录一个dfs的visit
         function<bool(vector<Term*>&)> dfs = [&dfs,&firstSet](vector<Term*>& terms) -> bool{
             bool ret = false;
             for(auto ptrTerm : terms ) {
@@ -171,6 +172,7 @@ private:
         int step = SEItem.ptrItem->pos;
         if ( step < toTerms.size() ) {
             NTerm = toTerms[ step ];
+            if ( true == NTerm->isTerminal ) return false;
             for(int i=step+1;i<toTerms.size();i++)
                 after.push_back( toTerms[i] );
             return true;
@@ -179,21 +181,32 @@ private:
         return false;
     }
     void calcClosureOne() {
+        printf(" Once CaclClosure Begin\n");
         for(auto ptrSEItem : collection) {
             StateExtItem& SEItem = *ptrSEItem;
             Term* NTerminal = NULL;
             vector<Term*> vecNextTerms;
-            if ( splitStateExtItem( SEItem, NTerminal, vecNextTerms ) ) {
-                if ( SEItem.next != endTermPtr ) vecNextTerms.push_back( SEItem.next );
-                set<Term*> firstSet = calcFirstSet(vecNextTerms);
 
+            printf("  ");ptrSEItem->print(true);
+            if ( splitStateExtItem( SEItem, NTerminal, vecNextTerms ) ) {
+                printf("    ");printf(" ok\n");
+                printf("    ");SEItem.print(false); NTerminal->print(true);
+                vecNextTerms.push_back( SEItem.next );
+
+                printf("     ");for(auto ptrTerm : vecNextTerms) ptrTerm->print(false);
+                printf("\n");
+
+                set<Term*> firstSet = calcFirstSet(vecNextTerms);
+                printf("     firstSet(%d)\n", firstSet.size());
                 for( auto pdtPtr : NTerminal->vecPdtPtrs  ) {
                     for( auto fPtrTerm : firstSet ) {
                         StateExtItem* p = new StateExtItem( pdtPtr->vecSItems[0] , fPtrTerm );
+                        collection.insert( p );
                     }
                 }
             }
         }
+        printf(" Once CalcClosure End\n");
     }
 public:
     int sId;

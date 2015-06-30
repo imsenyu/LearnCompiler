@@ -13,7 +13,7 @@
 1434645583 source:e:\document\desktop\compiler2015\cltoken\token.cpp
 	"token.h"
 
-1435679024 e:\document\desktop\compiler2015\cltoken\token.h
+1435684541 e:\document\desktop\compiler2015\cltoken\token.h
 	<iostream>
 	<cstdio>
 	<vector>
@@ -21,7 +21,7 @@
 	<set>
 	<functional>
 
-1435679852 source:e:\document\desktop\compiler2015\cltoken\main.cpp
+1435684129 source:e:\document\desktop\compiler2015\cltoken\main.cpp
 	<iostream>
 	<cstdio>
 	<cstdlib>
@@ -56,6 +56,7 @@
 
 1435583215 e:\document\desktop\compiler2015\cltoken\syntaxconfig.h
 
-1435680570 e:\document\desktop\compiler2015\cltoken\clutils.h
+1435682010 e:\document\desktop\compiler2015\cltoken\clutils.h
 	<map>
+	<iterator>
 

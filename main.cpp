@@ -191,6 +191,7 @@ public:
         vecStates[0]->collection.insert( beginSEItem );
         vecStates[0]->calcClosure();
 
+        vecStates[0]->print(true);
 
         set< StateSet*, StateSet > visited;
         visited.insert( vecStates[0] );
@@ -199,8 +200,10 @@ public:
         ///curStateId 小于等于该编号小的都已经完成 运算
         ///并且拿 curStateId 进行 step下一步, 对于构造出的每一个
         ///构造出一个算一个闭包，加入判重
+            printf("curStateId = %d\n", curStateId);
             map<Term*, vector<StateExtItem*>> term2SEItem;
             for( auto ptrSEItem : vecStates[curStateId]->collection ) {
+
                 StateExtItem& SEItem = *ptrSEItem;
                 Term& term = *SEItem.ptrItem->ptrPdt->ptrTerm;
                 if ( term2SEItem.find( &term ) == term2SEItem.end() ) {
@@ -209,21 +212,32 @@ public:
                 term2SEItem.find(&term)->second.push_back( &SEItem );
             }
             for( auto& link : term2SEItem ) {
+                printf("B begin\n");
+
                 Term* ptrTerm = link.first;
+                ptrTerm->print(true);
                 vector<StateExtItem*>& vecMapSEItem = link.second;
 
                 StateSet* newStateSet = new StateSet( vecStates.size() );
                 for( auto ptrSEItem : vecMapSEItem) {
+
                     if ( ptrSEItem->hasSItemNext() ) {
                         newStateSet->collection.insert( new StateExtItem( ptrSEItem->getSItemNext(), ptrSEItem->next ) );
-                        newStateSet->calcClosure();
+                        printf("ok ");
                     }
+                    printf("  ");ptrSEItem->print(true);
                 }
+                printf("B closure Start\n");
                 if ( 0 == newStateSet->collection.size() ) {
                     ///走不了的
+                    printf("  Deleted!!!\n");
                     delete newStateSet;
                     continue;
                 }
+                newStateSet->calcClosure();
+                printf("B closure\n");
+                newStateSet->print(true);
+                printf("B end\n");
 //            for( auto ptrSEItem : vecStates[curStateId]->collection ) {
 //                //StateExtItem* ptrSEItem;
 //                ///这么写不对，需要按照 sameTerm 放在一起做, 否则算出来的闭包不对，是个NFA了
@@ -262,6 +276,13 @@ public:
         return *this;
     }
 
+    syntaxParser& showStateSet() {
+        for(auto stateRow : mpStateTable ) {
+            int stateId = stateRow.first;
+            vecStates[stateId]->print(true);
+        }
+    }
+
     void nop() {}
     //syntaxParse* buildStateTable
 };
@@ -278,6 +299,7 @@ int main()
         buildStateItems().
         showStateItems().
         buildStateSet().
+        showStateSet().
         nop();
 
     cout << "Hello world!" << endl;
