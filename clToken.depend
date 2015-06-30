@@ -1,0 +1,61 @@
+# depslib dependency file v1.0
+1434645525 source:e:\document\desktop\compiler2015\cltoken\closure.cpp
+	"closure.h"
+
+1434645220 e:\document\desktop\compiler2015\cltoken\closure.h
+
+1434645555 source:e:\document\desktop\compiler2015\cltoken\syntaxtree.cpp
+	"syntaxTree.h"
+
+1435664746 e:\document\desktop\compiler2015\cltoken\syntaxtree.h
+	"token.h"
+
+1434645583 source:e:\document\desktop\compiler2015\cltoken\token.cpp
+	"token.h"
+
+1435679024 e:\document\desktop\compiler2015\cltoken\token.h
+	<iostream>
+	<cstdio>
+	<vector>
+	<string>
+	<set>
+	<functional>
+
+1435679852 source:e:\document\desktop\compiler2015\cltoken\main.cpp
+	<iostream>
+	<cstdio>
+	<cstdlib>
+	<string>
+	<vector>
+	<set>
+	<map>
+	<algorithm>
+	<functional>
+	<cassert>
+	"clUtils.h"
+	"token.h"
+	"closure.h"
+	"syntaxTree.h"
+
+1434675641 source:e:\document\desktop\compiler2015\cltoken\finiteautoman.cpp
+	"finiteAutoman.h"
+
+1434959395 e:\document\desktop\compiler2015\cltoken\finiteautoman.h
+	<vector>
+	"token.h"
+	"inputHelper.h"
+
+1434723780 source:e:\document\desktop\compiler2015\cltoken\inputhelper.cpp
+	"inputHelper.h"
+
+1435583223 e:\document\desktop\compiler2015\cltoken\inputhelper.h
+	<cstdio>
+	<cstdlib>
+	<iostream>
+	<fstream>
+
+1435583215 e:\document\desktop\compiler2015\cltoken\syntaxconfig.h
+
+1435680570 e:\document\desktop\compiler2015\cltoken\clutils.h
+	<map>
+
