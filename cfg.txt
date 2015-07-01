@@ -13,6 +13,6 @@ S 3 A d D
 S 0
 A 3 a A d
 A 0
-D 3 D a A
+D 3 D d A
 D 1 b
 D 0

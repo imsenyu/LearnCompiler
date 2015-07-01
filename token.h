@@ -115,8 +115,17 @@ public:
     Term *next;
     StateExtItem(StateItem* _ptr = NULL, Term *_next = endTermPtr): ptrItem(_ptr), next(_next) {}
     bool operator()(const StateExtItem* a, const StateExtItem* b) const {
-        if ( a->ptrItem == b->ptrItem ) return a->next < b->next;
-        else return a->ptrItem < b->ptrItem;
+        return (*a) < (*b);
+    }
+    bool operator==(const StateExtItem& b) const {
+        return ptrItem == b.ptrItem && next == b.next;
+    }
+    bool operator!=(const StateExtItem& b) const {
+        return !(*this == b);
+    }
+    bool operator<(const StateExtItem& b) const {
+        if ( ptrItem != b.ptrItem ) return ptrItem < b.ptrItem;
+        return next < b.next;
     }
     bool hasSItemNext() {
         if ( NULL == ptrItem ) return false;
@@ -240,8 +249,10 @@ public:
     bool compareCollection(const StateCollection& a, const StateCollection& b) const {
         auto iter = a.begin(), jter = b.begin();
         while( iter!=a.end() && jter != b.end() ) {
+            if ( NULL == *iter ) return true;
+            if ( NULL == *jter ) return false;
             StateExtItem &A = **iter, &B = **jter;
-            if ( A.ptrItem != B.ptrItem ) return A.ptrItem < B.ptrItem;
+            if ( A != B ) return A < B;
             iter++, jter++;
         }
         if ( jter != b.end() ) return true;
