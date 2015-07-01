@@ -4,14 +4,15 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <stack>
 #include <map>
 #include <algorithm>
 #include <functional>
-#include <cassert>
+#include <fstream>
 
 #include "clUtils.h"
 #include "token.h"
-#include "closure.h"
+//#include "closure.h"
 #include "syntaxTree.h"
 
 using namespace std;
@@ -32,6 +33,7 @@ public:
     map<string, vector<Production*>> mpATerm; ///ProductionMap
    // map<Production*, vector<StateItem*>> mpSItems; ///存储兼查找
     D2Map<int,Term*,int> mpStateTable;/// stateset - ATerm* 的二维查找表
+    ActionGotoTable* ptrAGTable;
     //map<int, map<Term*, int>> mpStateTable;/// stateset - ATerm* 的二维查找表
     ///供标号，delete
 
@@ -47,12 +49,13 @@ public:
         if ( iter != container.end() ) {
             switch(_type) {
                 case mapSecond:     return (void*)iter->second;
+                default: return NULL;
             }
         }
         else return NULL;
     }
 
-    syntaxParser(bool _debug = true):isDebug(_debug) {  }
+    syntaxParser(bool _debug = true):isDebug(_debug), ptrAGTable(NULL) {  }
     syntaxParser& inputTerm(istream& in) {
     /*
      * 先读取个数，然后读取id str isTerminal, 加入到 mpTerm中
@@ -110,7 +113,7 @@ public:
                 throw "Term Not Found";
             }
 
-            Production* addPtr = new Production(curTerm);
+            Production* addPtr = new Production( vecATerm.size(),  curTerm);
             for(int j=0;j<M;j++) {
                 in>>nextNode;
                 curTerm = (Term*)HashFind( mpTerm, nextNode, mapSecond );
@@ -224,8 +227,8 @@ public:
                 StateSet* newStateSet = new StateSet( vecStates.size() );
                 for( auto ptrSEItem : vecMapSEItem) {
 
-                    if ( ptrSEItem->hasSItemNext() ) {
-                        newStateSet->collection.insert( new StateExtItem( ptrSEItem->getSItemNext(), ptrSEItem->next ) );
+                    if ( ptrSEItem->hasNextSItem() ) {
+                        newStateSet->collection.insert( new StateExtItem( ptrSEItem->getNextSItem(), ptrSEItem->next ) );
                         printf("ok ");
                     }
                     printf("  ");ptrSEItem->print(true);
@@ -241,19 +244,7 @@ public:
                 printf("B closure\n");
                 newStateSet->print(true);
                 printf("B end\n");
-//            for( auto ptrSEItem : vecStates[curStateId]->collection ) {
-//                //StateExtItem* ptrSEItem;
-//                ///这么写不对，需要按照 sameTerm 放在一起做, 否则算出来的闭包不对，是个NFA了
-//                ///需要有一个 Term* <-> vector<StateExtItem*> 的映射,根据那个来算 闭包
-//                StateSet* newStateSet = new StateSet( vecStates.size() );
-//                if ( ptrSEItem->ptrItem->hasNext() ) {
-//
-//                }
-//                else {
-//                    ///走不了的
-//                    delete newStateSet;
-//                    continue;
-//                }
+
                 if ( visited.find( newStateSet ) != visited.end() ) {
                     ///判断是否重复. 自行维护一个 set<collection>
                     ///不过需要标记一下 走这个Term 可以回去
@@ -296,7 +287,153 @@ public:
             }
         }
 
+        return *this;
     }
+
+    syntaxParser& buildActionGotoTable() {
+        ///需要得到 map<int, map<Term*, AGState>>
+
+        ptrAGTable = new ActionGotoTable( &mpStateTable, &vecStates, vecATerm[0] );
+        ptrAGTable->build();
+
+        return *this;
+    }
+
+    syntaxParser& showActionGotoTable() {
+        if (!isDebug) return *this;
+        printf("ActionGotoTable Output at line %d:\n",__LINE__);
+
+        vector<Term*> termsWithEnd = vecTerm;
+        termsWithEnd.push_back(endTermPtr);
+        printf("\t");
+        for(auto ptrTerm : termsWithEnd) {
+            ptrTerm->print(false);
+            printf("\t");
+        }
+        printf("\n");
+        auto& table = ptrAGTable->table;
+        for(auto row : table ) {
+            int vId = row.first;
+            printf("I%d\t",vId);
+            for(auto ptrTerm : termsWithEnd) {
+                Action* action = table.get( vId, ptrTerm );
+                if ( NULL != action ) {
+                    action->print(false);
+                }
+                printf("\t");
+            }
+            printf("\n");
+        }
+        return *this;
+    }
+
+    syntaxParser& inputLex(istream& in) {
+        string bufTerm, bufLex;
+        int bufId;
+        while( in>>bufTerm>>bufId>>bufLex ) {
+            Term* ptrFoundTerm = NULL;
+            if ( mpTerm.find( bufTerm ) == mpTerm.end() ) {
+                cout<<bufTerm;
+                printf(" Term Not Found, SKIPED\n");
+                continue;
+            }
+            ptrFoundTerm = (Term*)HashFind(mpTerm, bufTerm, mapSecond);
+            ///每次读入 构造一个 Token, 加入队列中
+            vecToken.push_back( new Token( ptrFoundTerm, bufLex ) );
+        }
+        vecToken.push_back(new Token( endTermPtr, string("#") ));
+        if (!isDebug) return *this;
+        for(auto ptrToken : vecToken) {
+            ptrToken->print(true);
+        }
+
+        return *this;
+    }
+
+    syntaxParser& runSyntaxAnalyse() {
+        stack<int> stkState;
+        stack<syntaxNode*> stkSyntaxNode;
+        D2Map<int,Term*,Action>& table = ptrAGTable->table;
+
+        stkState.push(0);
+        stkSyntaxNode.push( new syntaxNode(*vecToken.rbegin()) );
+
+        int vTokenCnt = 0;
+        bool isRunnable = true;
+        while( vTokenCnt < vecToken.size() && isRunnable) {
+            int topState = stkState.top();
+            Token* nextToken = vecToken[ vTokenCnt ];
+
+            printf("topState=%d  %d, vTokenCnt = %d\n",topState, stkState.size(), vTokenCnt);
+            printf("  ");nextToken->ptrTerm->print(false);
+            Action* curAction = table.get(topState, nextToken->ptrTerm);
+            if ( NULL == curAction ) {
+                ///这个错就是没有合适匹配，具体怎么处理思考一下,跳过当前Token读下一个。  或者，目前先按照吃掉一个再说
+                ///并说明当前接受哪些Term读入
+                ///出错，未找到Action
+                printf("Error at topState=%d vTokenCnt = %d\n",topState,vTokenCnt);
+                vTokenCnt++;
+                continue;
+            }
+            nextToken->print(false);curAction->print(true);
+
+            switch(curAction->type) {
+                case Action::Type::Step:
+                    {
+                        stkState.push( curAction->toId );
+                        stkSyntaxNode.push( new syntaxNode( nextToken ) );
+                        vTokenCnt++;
+                    }
+                    break;
+                case Action::Type::Recur:
+                    {
+                        ///使用 Production[j] 规约
+                        Production* ptrPdt = vecATerm[curAction->toId];
+                        ptrPdt->print(-1,true);
+                        for(int i=0;i<ptrPdt->toTerms.size();i++)
+                            stkState.pop();
+                        topState = stkState.top();
+
+                        printf("  StatePop: %d\n",topState);
+
+                        curAction = table.get( topState, ptrPdt->ptrTerm );
+                        if ( NULL == curAction || curAction->type != Action::Type::Goto ) {
+                            ///stkState 弹出k次， 加入goto[ 新栈顶, 规则左部Term* ],，不应该没有，没有说明AGT打错了
+                            printf("  Need Goto\n");
+                        }
+                        stkState.push( curAction->toId );
+                        ///stkSyntaxNode 弹出的k次加入 new syntaxNode( nextToken ),把弹出的加入到 这个new的child里面, 设置这个new的Production*
+                        syntaxNode* parent = new syntaxNode( nextToken, ptrPdt );
+                        for(int i=0;i<ptrPdt->toTerms.size();i++) {
+                            parent->child.push_front( stkSyntaxNode.top() );
+                            stkSyntaxNode.pop();
+                        }
+                        stkSyntaxNode.push( parent );
+                    }
+                    break;
+                case Action::Type::Acc:
+                    printf("Acc\n");
+                    isRunnable = false;
+                    break;
+            }
+
+            ///实时构造语法树
+
+
+        }
+
+        printf("Tree:%d\n",stkSyntaxNode.size());
+        while( !stkSyntaxNode.empty() ) {
+            stkSyntaxNode.top()->print();
+            stkSyntaxNode.pop();
+
+        }
+
+
+        return *this;
+    }
+
+
 
     void nop() {}
     //syntaxParse* buildStateTable
@@ -304,17 +441,25 @@ public:
 
 int main()
 {
-    freopen("cfg.txt", "r",stdin);
+
+    fstream fileSyntax, fileLex;
+    fileSyntax.open("cfg.146.txt",ios_base::in );
+    fileLex.open("lex.146.txt", ios_base::in);
+
     syntaxParser parser;
     parser.
-        inputTerm(cin).
+        inputTerm(fileSyntax).
         showTerm().
-        inputProduction(cin).
+        inputProduction(fileSyntax).
         showProduction().
         buildStateItems().
         showStateItems().
         buildStateSet().
         showStateSet().
+        buildActionGotoTable().
+        showActionGotoTable().
+        inputLex(fileLex).
+        runSyntaxAnalyse().
         nop();
 
     cout << "Hello world!" << endl;

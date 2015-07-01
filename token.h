@@ -10,6 +10,8 @@
 #include <set>
 #include <functional>
 
+#include "clUtils.h"
+
 using namespace std;
 
 class Term;
@@ -43,6 +45,12 @@ class Token {
 public:
     Term* ptrTerm;
     string lexData;
+    Token(Term* _ptr, const string& _str): ptrTerm(_ptr), lexData(_str) {}
+    void print(bool breakLine = true) {
+        ptrTerm->print(false);
+        cout<<" "<<lexData;
+        breakLine && printf("\n");
+    }
 };
 
 /*
@@ -59,12 +67,14 @@ public:
 ///Prodution，
 class Production {
 public:
+    int pId;
     Term* ptrTerm;
     bool isTerminal;
     vector<Term*> toTerms;
     vector<StateItem*> vecSItems;
-    Production( Term* _ptr = NULL , bool _terminal = false): ptrTerm(_ptr), isTerminal(_terminal) {}
+    Production( int _id, Term* _ptr = NULL , bool _terminal = false): pId(_id), ptrTerm(_ptr), isTerminal(_terminal) {}
     void print(int pos = -1, bool breakLine = true) {
+        printf("[%d] ",pId);
         ptrTerm->print(false);
         if ( false == ptrTerm->isTerminal ) {
             printf(" => ");
@@ -99,7 +109,11 @@ public:
         if ( NULL == ptrPdt || pos >= ptrPdt->toTerms.size()) return NULL;
         return ptrPdt->toTerms[ pos ];
     }
-    StateItem* getNext() {
+    Term* getFromTerm() {
+        if ( NULL == ptrPdt ) return NULL;
+        return ptrPdt->ptrTerm;
+    }
+    StateItem* getNextSItem() {
         if ( NULL == ptrPdt ) return NULL;
         return ptrPdt->vecSItems[ pos+1 ];
     }
@@ -127,13 +141,17 @@ public:
         if ( ptrItem != b.ptrItem ) return ptrItem < b.ptrItem;
         return next < b.next;
     }
-    bool hasSItemNext() {
+    bool hasNextSItem() {
         if ( NULL == ptrItem ) return false;
         return ptrItem->hasNext();
     }
-    StateItem* getSItemNext() {
+    Term* getFromTerm() {
         if ( NULL == ptrItem ) return NULL;
-        return ptrItem->getNext();
+        return ptrItem->getFromTerm();
+    }
+    StateItem* getNextSItem() {
+        if ( NULL == ptrItem ) return NULL;
+        return ptrItem->getNextSItem();
     }
     void print(bool breakLine) {
         if ( ptrItem ) {
@@ -268,6 +286,87 @@ public:
 
 };
 
+class Action {
+public:
+    enum Type {Err = 0,Acc, Step, Goto, Recur};
+    Type type;
+    int toId;
+    Action(Type _type, int _id): type(_type), toId(_id) {}
+    void print(bool breakLine = true) {
+        switch(type) {
+            case Err: printf("Err"); break;
+            case Acc: printf("Acc"); break;
+            case Step: printf("S%d",toId); break;
+            case Goto: printf("G%d",toId); break;
+            case Recur: printf("R%d",toId); break;
+        }
+        breakLine && printf("\n");
+    }
+};
 
+class ActionGotoTable {
+public:
+
+
+    typedef D2Map<int,Term*,int> TypeStateTable;
+    typedef vector<StateSet*> TypeVectorStates;
+    TypeStateTable* ptrData;
+    TypeVectorStates* ptrVec;
+    Production* origin;
+    D2Map<int,Term*,Action> table;
+
+    ActionGotoTable(TypeStateTable* _ptr = NULL, TypeVectorStates* _ptrVec = NULL, Production* _ptrPdt = NULL): origin(_ptrPdt), ptrData(_ptr), ptrVec(_ptrVec) {
+        printf("build\n");
+    }
+    ~ActionGotoTable() {}
+    bool build() {
+        if ( NULL == ptrData || NULL == ptrVec || NULL == origin ) return false;
+        printf("Action Goto Table\n");
+        printf("  Step, Goto\n");
+        TypeStateTable& mpStateTable = *ptrData;
+        for(auto row : mpStateTable) {
+            int stateFromId = row.first;
+            for(auto col : row.second) {
+                ///C0000005 异常，待查
+                Term* ptrStepTerm = col.first;
+                int stateToId = col.second;
+                //ptrStepTerm->print(true);
+                if ( true == ptrStepTerm->isTerminal ) {
+                    ///Step 移进
+                    table.add( stateFromId, ptrStepTerm, Action(Action::Type::Step, stateToId) );
+                }
+                else {
+                    table.add( stateFromId, ptrStepTerm, Action(Action::Type::Goto, stateToId) );
+                }
+            }
+        }
+        ///还有一个Recur
+        printf("  Recur\n");
+        TypeVectorStates& vecStates = *ptrVec;
+        for(int fromId = 0;fromId < vecStates.size();fromId++) {
+            for( auto ptrSEItem : vecStates[fromId]->collection ) {
+                if ( false == ptrSEItem->hasNextSItem() )
+                    table.add( fromId, ptrSEItem->next, Action(Action::Type::Recur, ptrSEItem->ptrItem->ptrPdt->pId) );
+            }
+        }
+        ///还有最后一个ACC
+        printf("  Acc\n");
+        vector<int> vecAcc;
+        StateExtItem* target = new StateExtItem( origin->vecSItems[ origin->toTerms.size() ], endTermPtr );
+        for(int vId = 0; vId < vecStates.size(); vId++) {
+            StateSet::StateCollection& collection = vecStates[vId]->collection;
+            if ( collection.find( target ) != collection.end() ) {
+                vecAcc.push_back( vId );
+            }
+        }
+        for(auto accId : vecAcc) {
+            table.add( accId, endTermPtr, Action(Action::Type::Acc, -1) );
+        }
+        delete target;
+        return true;
+    }
+
+
+};
 
 #endif // TOKEN_H_INCLUDED

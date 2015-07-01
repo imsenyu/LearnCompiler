@@ -2,39 +2,41 @@
 1434645525 source:e:\document\desktop\compiler2015\cltoken\closure.cpp
 	"closure.h"
 
-1434645220 e:\document\desktop\compiler2015\cltoken\closure.h
+1435730460 e:\document\desktop\compiler2015\cltoken\closure.h
 
 1434645555 source:e:\document\desktop\compiler2015\cltoken\syntaxtree.cpp
 	"syntaxTree.h"
 
-1435664746 e:\document\desktop\compiler2015\cltoken\syntaxtree.h
+1435757908 e:\document\desktop\compiler2015\cltoken\syntaxtree.h
+	<deque>
 	"token.h"
 
 1434645583 source:e:\document\desktop\compiler2015\cltoken\token.cpp
 	"token.h"
 
-1435726046 e:\document\desktop\compiler2015\cltoken\token.h
+1435749943 e:\document\desktop\compiler2015\cltoken\token.h
 	<iostream>
 	<cstdio>
 	<vector>
 	<string>
 	<set>
 	<functional>
+	"clUtils.h"
 
-1435722798 source:e:\document\desktop\compiler2015\cltoken\main.cpp
+1435757452 source:e:\document\desktop\compiler2015\cltoken\main.cpp
 	<iostream>
 	<cstdio>
 	<cstdlib>
 	<string>
 	<vector>
 	<set>
+	<stack>
 	<map>
 	<algorithm>
 	<functional>
-	<cassert>
+	<fstream>
 	"clUtils.h"
 	"token.h"
-	"closure.h"
 	"syntaxTree.h"
 
 1434675641 source:e:\document\desktop\compiler2015\cltoken\finiteautoman.cpp
@@ -56,7 +58,7 @@
 
 1435583215 e:\document\desktop\compiler2015\cltoken\syntaxconfig.h
 
-1435682010 e:\document\desktop\compiler2015\cltoken\clutils.h
+1435734380 e:\document\desktop\compiler2015\cltoken\clutils.h
 	<map>
 	<iterator>
 

@@ -32,7 +32,7 @@ public:
         return rter->second.end();
     }
 
-    bool add( _Row& row, _Col& col, _Ele ele, bool _replace = true ) {
+    bool add( const _Row& row, const _Col& col, _Ele ele, bool _replace = true ) {
         typename mapRowCol::iterator rter = data.find( row );
         if ( rter == data.end() ) {
             data.insert( make_pair( row, mapCol() ) );
@@ -50,7 +50,7 @@ public:
         return false;
 
     }
-    _Ele* get( _Row& row, _Col& col) {
+    _Ele* get( const _Row& row, const _Col& col) {
         typename mapRowCol::iterator rter = data.find( row );
         if ( rter == data.end() ) return NULL;
         typename mapCol::iterator ctor = rter->second.find( col );
