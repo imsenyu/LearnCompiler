@@ -84,8 +84,8 @@ public:
      * strname bool
      */
         printf("Terms(%d) Output at line %d:\n",mpTerm.size(), __LINE__);
-        for(auto iter = mpTerm.begin();iter!=mpTerm.end();iter++) {
-            Term& iTerm = *(iter->second);
+        for(auto iter : mpTerm) {
+            Term& iTerm = *iter.second;
             cout<<iTerm.tName<<" "<<iTerm.isTerminal<<endl;
         }
         return *this;
@@ -145,13 +145,12 @@ public:
         if (!isDebug) return *this;
         printf("Production(%d), TermStart(%d) Output at line %d:\n",vecATerm.size(), mpATerm.size(), __LINE__);
 
-        for(auto iter=mpATerm.begin(); iter!=mpATerm.end(); iter++) {
-            string startNode = (iter->first);
-            cout<<"["<<iter->first<<"]"<<endl;
-            vector<Production*>& pdts = (iter->second);
-            for(auto jter=pdts.begin(); jter!=pdts.end(); jter++ ) {
-                Production& pdt = **jter;
-                printf("   ");pdt.print(-1,true);
+        for(auto iter : mpATerm) {
+            const string& startNode = iter.first;
+            cout<<"["<<startNode<<"]"<<endl;
+            vector<Production*>& vecPdts = iter.second;
+            for( auto ptrPdt : vecPdts ) {
+                printf("   ");ptrPdt->print(-1,true);
             }
         }
         return *this;
@@ -429,11 +428,8 @@ public:
 
         }
 
-
         return *this;
     }
-
-
 
     void nop() {}
     //syntaxParse* buildStateTable

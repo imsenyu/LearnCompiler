@@ -21,8 +21,13 @@ class StateItem;
 class StateExtItem;
 class StateSet;
 
-///单词
-///需要 map: tName <-> Term*
+/*
+ * class Term
+ * description: 语法定义的词
+ * data:    词的字符串表示tName，是否终结符isTerminal，由其导出的产生式vector<Production*>
+ * method:  print(输出语法词的字符串;可选换行)
+ *          constructor(使用istream构造数据)//这个应该被剥离出类实现！
+ */
 class Term {
 public:
     string tName;
@@ -37,10 +42,19 @@ public:
         breakLine && printf("\n");
     }
 };
+/*
+ * const class Term
+ * description: 常量，空字符，和 结束#字符；发现空字符没有使用过，可以考虑删除
+ */
  Term* const nullTermPtr = new Term("",true);
  Term* const endTermPtr = new Term("#",true);
 
-///读取词法分析结果够构造Token vector序列用，跑AG表的时候按顺序读取
+/*
+ * class Token
+ * description: 词法分析器输出的词
+ * data:    对应的语法的词Term，拥有的综合属性lexData
+ * method:  print(输出语法的词和综合属性;可选换行)
+ */
 class Token {
 public:
     Term* ptrTerm;
@@ -54,25 +68,18 @@ public:
 };
 
 /*
-///产生式
-///需要 map: Term* <-> vector<Production*>
-///允许 使用 一个 Term->isTerminal == true 的元素 当 Production的 终结节点
-class Production {
-public:
-    Term* tFrom;
-    vector<Term*> toTerms;
-    Production(Term* _from = NULL): tFrom(_from) {}
-};
-*/
-///Prodution，
+ * class Production
+ * description: 语法定义的产生式
+ * data:    产生式编号pId, 产生式左部词ptrTerm, 产生式右部词数组toTerms, 由该产生式导出的 项目集数组vecSItems(按照*的位置存放)
+ * method:  print(输出该产生式;可选*位置，可选换行)
+ */
 class Production {
 public:
     int pId;
     Term* ptrTerm;
-    bool isTerminal;
     vector<Term*> toTerms;
     vector<StateItem*> vecSItems;
-    Production( int _id, Term* _ptr = NULL , bool _terminal = false): pId(_id), ptrTerm(_ptr), isTerminal(_terminal) {}
+    Production( int _id, Term* _ptr = NULL ): pId(_id), ptrTerm(_ptr) {}
     void print(int pos = -1, bool breakLine = true) {
         printf("[%d] ",pId);
         ptrTerm->print(false);
@@ -95,15 +102,24 @@ public:
     }
 };
 
-///LR项目，带·位置pos和LR1需要考虑的下一个字符
+/*
+ * class StateItem
+ * description: 语法定义的(产生式 + 项目集移进位置)
+ * data: 对应产生式ptrPdt, 移进位置pos
+ * method:  hasNextSItem(对于该项目,是否存在下一个移进项目StateItem)
+ *          getNextTerm(获得下一个移进的词Term)
+ *          getFromTerm(获得对应产生式的左部词Term)
+ *          getNextSItem(获得下一个移进项目StateItem)
+ *          print(输出对应移进位置pos的项目;可选换行)
+ */
 class StateItem {
 public:
     Production* ptrPdt;
     int pos;
     StateItem(Production* _ptr = NULL, int _pos = 0): ptrPdt(_ptr), pos(_pos) {}
-    bool hasNext() {
+    bool hasNextSItem() {
         if ( NULL == ptrPdt ) return false;
-        return pos < ptrPdt->toTerms.size();// && true == ptrPdt->toTerms[pos]->isTerminal;
+        return pos < ptrPdt->toTerms.size();
     }
     Term* getNextTerm() {
         if ( NULL == ptrPdt || pos >= ptrPdt->toTerms.size()) return NULL;
@@ -123,6 +139,19 @@ public:
     }
 };
 
+/*
+ * class StateExtItem
+ * description: 语法定义的(产生式 + 项目集移进位置 + LR1向后看的词Term)
+ * data: 对应被扩展的ptrItem 和 向后看的词next
+ * method:  operator(*,*)(用于set<*>的排序/判重比较)
+ *          operator==(用于判别内容是否相等)
+ *          operator!=(用于判别内容是否不等)
+ *          operator<(用于比较大小,用于set判重)
+ *          hasNextSItem(同上)
+ *          getFromTerm(同上)
+ *          getNextSItem(同上)
+ *          print(输出对应移进位置pos的项目 和 向后看的词Term;可选换行)
+ */
 class StateExtItem {
 public:
     StateItem* ptrItem;
@@ -143,7 +172,7 @@ public:
     }
     bool hasNextSItem() {
         if ( NULL == ptrItem ) return false;
-        return ptrItem->hasNext();
+        return ptrItem->hasNextSItem();
     }
     Term* getFromTerm() {
         if ( NULL == ptrItem ) return NULL;
@@ -162,16 +191,64 @@ public:
     }
 };
 
-///LR项目集状态，
+/*
+ * class StateSet
+ * description: LR1项目集的一整个状态
+ * data: 状态编号sId, 拥有的扩展项目set集合collection
+ * method:  calcClosure(用于计算当前collection的完整闭包)
+ *          print(输出当前集合中的扩展项目)
+ *          operator(*,*)(用于比较各个状态集合是否完全相同)
+ *      PRIVATE
+ *          calcFirstSet(对当前Term集合计算First集)
+ *          splitStateExtItem(对当前扩展项目进行分割，判定是否可以进行闭包扩展)
+ *          calcClosureOne(进行一次闭包扩展)
+ *          compareCollection(用于public的operator，比较collection内容是否相同)
+ */
 class StateSet {
+
+public:
+    int sId;
+    typedef set<StateExtItem*,StateExtItem> StateCollection;
+    StateCollection collection;
+    StateSet(int _id = 0):sId(_id) {}
+    ~StateSet() {
+        ///把 collection 中的 SEItem 全 delete 掉
+    }
+
+    bool calcClosure() {
+    /*
+     * 计算闭包,每次循环都算一次,如果不再增大就跳出
+     */
+        int curCnt = 0;
+        do {
+            curCnt = collection.size();
+            calcClosureOne();
+        }
+        while( curCnt < collection.size() );
+        return true;
+    }
+
+    void print(bool breakLine) {
+        printf("StateId(%d) :\n",sId);
+        for(auto ptrSEItem : collection ) {
+            printf("  ");ptrSEItem->print(true);
+        }
+    }
+
+    bool operator()(const StateSet* a, const StateSet* b) const {
+        return compareCollection(a->collection,b->collection);
+    }
 private:
     set<Term*> calcFirstSet(vector<Term*>& after) {
+    /*
+     * 计算First集
+     * 定义了一个函数闭包dfs,用来进行深度优先搜索
+     *   对于搜索的每个vector<Term*>数组，按次序遍历Term
+     *     若是终结符就加入First集，跳出
+     *     若是非终结符就往其所有产生式进一步 递归
+     */
         set<Term*> firstSet;
-        ///准备一个带路径回溯的dfs
-        ///根据after中的一个个开始扫描
 
-        ///如果你能找到 true就反
-        ///还需要记录一个dfs的visit
         function<bool(vector<Term*>&)> dfs = [&dfs,&firstSet](vector<Term*>& terms) -> bool{
             bool ret = false;
             for(auto ptrTerm : terms ) {
@@ -199,6 +276,10 @@ private:
         return firstSet;
     }
     bool splitStateExtItem( StateExtItem& SEItem, Term* &NTerm, vector<Term*>& after ) {
+    /*
+     * 判断当前 扩展项目能否根据闭包规则扩展
+     * 如果可移进，并且移进项是非终结符，则可以，并且引用修改NTerm和after数据
+     */
         vector<Term*> &toTerms = SEItem.ptrItem->ptrPdt->toTerms;
         int step = SEItem.ptrItem->pos;
         if ( step < toTerms.size() ) {
@@ -212,6 +293,12 @@ private:
         return false;
     }
     void calcClosureOne() {
+    /*
+     * 单次闭包扩展
+     * 对于collection中的每一个扩展项目
+     *   判定其是否满足闭包移进规则
+     *     若是，求First集，并生成新的扩展项目
+     */
         printf(" Once CaclClosure Begin\n");
         for(auto ptrSEItem : collection) {
             StateExtItem& SEItem = *ptrSEItem;
@@ -239,32 +326,13 @@ private:
         }
         printf(" Once CalcClosure End\n");
     }
-public:
-    int sId;
-    typedef set<StateExtItem*,StateExtItem> StateCollection;
-    StateCollection collection;
-
-    bool calcClosure() {
-        ///每次循环增一个
-        int curCnt = 0;
-        do {
-            curCnt = collection.size();
-            calcClosureOne();
-        }
-        while( curCnt < collection.size() );
-        return true;
-    }
-    void print(bool breakLine) {
-        printf("StateId(%d) :\n",sId);
-        for(auto ptrSEItem : collection ) {
-            printf("  ");ptrSEItem->print(true);
-        }
-    }
-    StateSet(int _id = 0):sId(_id) {}
-    ~StateSet() {
-        ///把 collection 中的 SEItem 全 delete 掉
-    }
     bool compareCollection(const StateCollection& a, const StateCollection& b) const {
+    /*
+     * 比较两个collection, 返回 operator< 的运算结果
+     * 分别比较两个collection的同一个顺序下的元素
+     *   只要有一个不同就返回 不同元素的operator<运算结果
+     */
+        if ( a.size() != b.size() ) return a.size() < b.size();
         auto iter = a.begin(), jter = b.begin();
         while( iter!=a.end() && jter != b.end() ) {
             if ( NULL == *iter ) return true;
@@ -273,19 +341,16 @@ public:
             if ( A != B ) return A < B;
             iter++, jter++;
         }
-        if ( jter != b.end() ) return true;
-        if ( iter != a.end() ) return false;
         return false;
     }
-    bool operator()(const StateSet* a, const StateSet* b) const {
-        ///像比较字符串一样，按顺序比较两个set的每一个 StateExtItem 中的 StateItem* ptrSItem;
-        ///缺就当 NULL
-        return compareCollection(a->collection,b->collection);
-    }
-
-
 };
 
+/*
+ * class Action
+ * description: ActionGoto表的子类型
+ * data: 执行动作类型type, 动作参数toId
+ * method:  print(输出具体动作状态)
+ */
 class Action {
 public:
     enum Type {Err = 0,Acc, Step, Goto, Recur};
@@ -306,8 +371,6 @@ public:
 
 class ActionGotoTable {
 public:
-
-
     typedef D2Map<int,Term*,int> TypeStateTable;
     typedef vector<StateSet*> TypeVectorStates;
     TypeStateTable* ptrData;
@@ -327,10 +390,8 @@ public:
         for(auto row : mpStateTable) {
             int stateFromId = row.first;
             for(auto col : row.second) {
-                ///C0000005 异常，待查
                 Term* ptrStepTerm = col.first;
                 int stateToId = col.second;
-                //ptrStepTerm->print(true);
                 if ( true == ptrStepTerm->isTerminal ) {
                     ///Step 移进
                     table.add( stateFromId, ptrStepTerm, Action(Action::Type::Step, stateToId) );
