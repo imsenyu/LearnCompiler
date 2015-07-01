@@ -201,22 +201,25 @@ public:
         ///并且拿 curStateId 进行 step下一步, 对于构造出的每一个
         ///构造出一个算一个闭包，加入判重
             printf("curStateId = %d\n", curStateId);
+            vector<Term*> vecOrderedTerm;
             map<Term*, vector<StateExtItem*>> term2SEItem;
             for( auto ptrSEItem : vecStates[curStateId]->collection ) {
-
+                ///需要经过的是 B 而不是 startNode，改成B
                 StateExtItem& SEItem = *ptrSEItem;
-                Term& term = *SEItem.ptrItem->ptrPdt->ptrTerm;
-                if ( term2SEItem.find( &term ) == term2SEItem.end() ) {
-                    term2SEItem.insert( make_pair( &term, vector<StateExtItem*>() ) );
+                Term* ptrTerm = SEItem.ptrItem->getNextTerm();
+                if ( NULL == ptrTerm ) continue;
+                if ( term2SEItem.find( ptrTerm ) == term2SEItem.end() ) {
+                    term2SEItem.insert( make_pair( ptrTerm, vector<StateExtItem*>() ) );
+                    vecOrderedTerm.push_back(ptrTerm);
                 }
-                term2SEItem.find(&term)->second.push_back( &SEItem );
+                term2SEItem.find(ptrTerm)->second.push_back( &SEItem );
             }
-            for( auto& link : term2SEItem ) {
+            for( auto ptrTerm : vecOrderedTerm ) {
                 printf("B begin\n");
 
-                Term* ptrTerm = link.first;
+                //Term* ptrTerm;
                 ptrTerm->print(true);
-                vector<StateExtItem*>& vecMapSEItem = link.second;
+                vector<StateExtItem*>& vecMapSEItem = term2SEItem.find(ptrTerm)->second;
 
                 StateSet* newStateSet = new StateSet( vecStates.size() );
                 for( auto ptrSEItem : vecMapSEItem) {
@@ -277,10 +280,22 @@ public:
     }
 
     syntaxParser& showStateSet() {
-        for(auto stateRow : mpStateTable ) {
-            int stateId = stateRow.first;
-            vecStates[stateId]->print(true);
+        if (!isDebug) return *this;
+        printf("StateSet Output at line %d:\n",__LINE__);
+        for(auto ptrStateSet : vecStates ) {
+            ptrStateSet->print(true);
         }
+        printf("StateSet - Graph Output at line %d:\n",__LINE__);
+        for(auto row : mpStateTable) {
+            int stateFromId = row.first;
+            for(auto col : row.second) {
+                int stateToId = col.second;
+                printf("  I(%d) ", stateFromId);
+                col.first->print(false);
+                printf(" I(%d)\n",stateToId);
+            }
+        }
+
     }
 
     void nop() {}

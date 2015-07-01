@@ -26,7 +26,7 @@ public:
     string tName;
     bool isTerminal;
     vector<Production*> vecPdtPtrs;
-    Term(string _name, bool _terminal = true): tName(_name), isTerminal(_terminal) {}
+    Term(string _name = "", bool _terminal = true): tName(_name), isTerminal(_terminal) {}
     Term(istream& in) {
         in>>tName>>isTerminal;
     }
@@ -94,6 +94,10 @@ public:
     bool hasNext() {
         if ( NULL == ptrPdt ) return false;
         return pos < ptrPdt->toTerms.size();// && true == ptrPdt->toTerms[pos]->isTerminal;
+    }
+    Term* getNextTerm() {
+        if ( NULL == ptrPdt || pos >= ptrPdt->toTerms.size()) return NULL;
+        return ptrPdt->toTerms[ pos ];
     }
     StateItem* getNext() {
         if ( NULL == ptrPdt ) return NULL;
@@ -234,7 +238,15 @@ public:
         ///把 collection 中的 SEItem 全 delete 掉
     }
     bool compareCollection(const StateCollection& a, const StateCollection& b) const {
-        return true;
+        auto iter = a.begin(), jter = b.begin();
+        while( iter!=a.end() && jter != b.end() ) {
+            StateExtItem &A = **iter, &B = **jter;
+            if ( A.ptrItem != B.ptrItem ) return A.ptrItem < B.ptrItem;
+            iter++, jter++;
+        }
+        if ( jter != b.end() ) return true;
+        if ( iter != a.end() ) return false;
+        return false;
     }
     bool operator()(const StateSet* a, const StateSet* b) const {
         ///像比较字符串一样，按顺序比较两个set的每一个 StateExtItem 中的 StateItem* ptrSItem;
