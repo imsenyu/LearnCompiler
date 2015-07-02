@@ -4,7 +4,7 @@
 #include <string>
 #include <fstream>
 
-#include "parser.h"
+#include "translator.h"
 
 using namespace std;
 
@@ -15,7 +15,7 @@ int main()
     fileSyntax.open("cfg.4opera.txt",ios_base::in );
     fileLex.open("lex.4opera.txt", ios_base::in);
 
-    syntaxParser parser;
+    Translator parser;
     parser.
         inputTerm(fileSyntax).
         showTerm().

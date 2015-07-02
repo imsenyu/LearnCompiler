@@ -51,8 +51,7 @@
 1435817095 source:e:\document\desktop\compiler2015\cltoken\clutils.cpp
 	"clUtils.h"
 
-1435852195 e:\document\desktop\compiler2015\cltoken\parser.h
-	"stdafx.h"
+1435856268 e:\document\desktop\compiler2015\cltoken\parser.h
 	"stdafx.h"
 	"clUtils.h"
 	"term.h"
@@ -63,9 +62,8 @@
 	"action.h"
 	"syntaxTree.h"
 
-1435817636 source:e:\document\desktop\compiler2015\cltoken\parser.cpp
+1435856248 source:e:\document\desktop\compiler2015\cltoken\parser.cpp
 	"parser.h"
-	"clUtils.h"
 
 1435851189 e:\document\desktop\compiler2015\cltoken\term.h
 	"stdafx.h"
