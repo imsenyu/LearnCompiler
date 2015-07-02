@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <functional>
 #include <fstream>
+#include <cassert>
 
 #include "clUtils.h"
 #include "token.h"
@@ -34,6 +35,7 @@ public:
    // map<Production*, vector<StateItem*>> mpSItems; ///存储兼查找
     D2Map<int,Term*,int> mpStateTable;/// stateset - ATerm* 的二维查找表
     ActionGotoTable* ptrAGTable;
+    syntaxNode* ptrSyntaxTreeRoot;
     //map<int, map<Term*, int>> mpStateTable;/// stateset - ATerm* 的二维查找表
     ///供标号，delete
 
@@ -55,7 +57,7 @@ public:
         else return NULL;
     }
 
-    syntaxParser(bool _debug = true):isDebug(_debug), ptrAGTable(NULL) {  }
+    syntaxParser(bool _debug = true):isDebug(_debug), ptrAGTable(NULL), ptrSyntaxTreeRoot(NULL) {  }
     syntaxParser& inputTerm(istream& in) {
     /*
      * 先读取个数，然后读取id str isTerminal, 加入到 mpTerm中
@@ -217,10 +219,10 @@ public:
                 term2SEItem.find(ptrTerm)->second.push_back( &SEItem );
             }
             for( auto ptrTerm : vecOrderedTerm ) {
-                printf("B begin\n");
+                //printf("B begin\n");
 
                 //Term* ptrTerm;
-                ptrTerm->print(true);
+                //ptrTerm->print(true);
                 vector<StateExtItem*>& vecMapSEItem = term2SEItem.find(ptrTerm)->second;
 
                 StateSet* newStateSet = new StateSet( vecStates.size() );
@@ -228,21 +230,21 @@ public:
 
                     if ( ptrSEItem->hasNextSItem() ) {
                         newStateSet->collection.insert( new StateExtItem( ptrSEItem->getNextSItem(), ptrSEItem->next ) );
-                        printf("ok ");
+                        //printf("ok ");
                     }
-                    printf("  ");ptrSEItem->print(true);
+                    //printf("  ");ptrSEItem->print(true);
                 }
-                printf("B closure Start\n");
+                //printf("B closure Start\n");
                 if ( 0 == newStateSet->collection.size() ) {
                     ///走不了的
-                    printf("  Deleted!!!\n");
+                    //printf("  Deleted!!!\n");
                     delete newStateSet;
                     continue;
                 }
                 newStateSet->calcClosure();
-                printf("B closure\n");
-                newStateSet->print(true);
-                printf("B end\n");
+                //printf("B closure\n");
+               // newStateSet->print(true);
+                //printf("B end\n");
 
                 if ( visited.find( newStateSet ) != visited.end() ) {
                     ///判断是否重复. 自行维护一个 set<collection>
@@ -370,6 +372,7 @@ public:
                 ///这个错就是没有合适匹配，具体怎么处理思考一下,跳过当前Token读下一个。  或者，目前先按照吃掉一个再说
                 ///并说明当前接受哪些Term读入
                 ///出错，未找到Action
+                ///出错的话加入到错误队列中，等跑完这个while一起输出，如果是ACC再继续下面的流程，否则不用继续分析语义了
                 printf("Error at topState=%d vTokenCnt = %d\n",topState,vTokenCnt);
                 vTokenCnt++;
                 continue;
@@ -404,7 +407,9 @@ public:
                         ///stkSyntaxNode 弹出的k次加入 new syntaxNode( nextToken ),把弹出的加入到 这个new的child里面, 设置这个new的Production*
                         syntaxNode* parent = new syntaxNode( nextToken, ptrPdt );
                         for(int i=0;i<ptrPdt->toTerms.size();i++) {
-                            parent->child.push_front( stkSyntaxNode.top() );
+                            syntaxNode* child = stkSyntaxNode.top();
+                            child->ptrParent = parent;
+                            parent->child.push_front( child );
                             stkSyntaxNode.pop();
                         }
                         stkSyntaxNode.push( parent );
@@ -421,13 +426,233 @@ public:
 
         }
 
-        printf("Tree:%d\n",stkSyntaxNode.size());
+        if ( 1 > stkSyntaxNode.size() ) {
+            printf("Can't buildTree\n");
+            return *this;
+        }
+        ptrSyntaxTreeRoot = stkSyntaxNode.top();
+        stkSyntaxNode.pop();
         while( !stkSyntaxNode.empty() ) {
-            stkSyntaxNode.top()->print();
+            delete stkSyntaxNode.top();
             stkSyntaxNode.pop();
-
         }
 
+        return *this;
+    }
+
+    syntaxParser& showSyntaxTree() {
+        ptrSyntaxTreeRoot->print(true);
+        return *this;
+    }
+
+    void dfs(syntaxNode* root, function<bool(syntaxNode* root, int pos)> *func) {
+        deque<syntaxNode*>& child = root->child;
+        if ( NULL == root->ptrPdt ) return;
+        int pId = root->ptrPdt->pId;
+        function<bool(syntaxNode* root, int pos)>& f = func[pId];
+
+        f(root, -1);
+        for(int c=0;c<child.size();c++) {
+            dfs(child[c], func);
+            f(root, c);
+        }
+
+    }
+
+    int getLineNum(bool start = false, bool _plus = true) {
+        static int line = 1;
+        if ( true == start ) line = 1;
+        if ( _plus ) return line++;
+        else return line;
+    }
+
+    int getNewTmp(bool start = false) {
+        static int cnt = 1;
+        if ( true == start ) cnt = 1;
+        return cnt++;
+    }
+
+    ///虚函数扩展，可自行定义，然后根据自行定义执行完整的翻译
+    virtual syntaxParser& syntaxDirectedTranslation() {
+        ///根据数组中每个函数的定义
+        /*
+_S 1 S
+S 1 E
+E 1 T
+E 3 E + T
+T 1 P
+T 3 T * P
+P 1 NUM
+P 3 ( E )
+         */
+        const string strValue("value"), strPlace("place");
+        function<bool(syntaxNode* root, int pos)> transFuncArr[] = {
+            /* 0 _S->S */
+            [&](syntaxNode* root, int pos){ /*do nothing*/ return true; },
+            /* 1 S-> E */
+            [&](syntaxNode* root, int pos){
+                switch(pos) {
+                    case -1: {
+                        root->hashData.add( strPlace, new int(getNewTmp()) );
+                    } break;
+                    case 0: {
+                        syntaxNode* target = root->child[pos];
+                        assert(target);
+                        assert( target->hashData.has(strValue) );
+                        int* ptrValFromE = *(int**)target->hashData.get(strValue);
+                        assert(ptrValFromE);
+                        root->hashData.add(strValue, new int(*ptrValFromE));
+                        printf("L-%d\t",getLineNum());
+                        printf("t%d = t%d\n", *(int*)*root->hashData.get(strPlace), *(int*)*target->hashData.get(strPlace));
+                        printf("Need t%d\n", *(int*)*root->hashData.get(strPlace));
+                    } break;
+                }
+                return true;
+            },
+            /* 2 E-> T */
+            [&](syntaxNode* root, int pos){
+                switch(pos) {
+                    case -1: {
+                        //root->hashData.add( strPlace, new int(getNewTmp()) );
+                    } break;
+                    case 0: {
+                        syntaxNode* target = root->child[pos];
+                        assert(target);
+                        assert( target->hashData.has(strValue) );
+                        int* ptrValFromT = *(int**)target->hashData.get(strValue);
+                        assert(ptrValFromT);
+                        root->hashData.add(strValue, new int(*ptrValFromT));
+                        //printf("L-%d\t",getLineNum());
+                        root->hashData.add( strPlace, new int(*(int*)*target->hashData.get(strPlace)) );
+                        //printf("t%d = t%d\n",*(int*)*root->hashData.get(strPlace), *(int*)*target->hashData.get(strPlace));
+                    } break;
+                }
+                return true;
+            },
+            /* 3 E-> E + T */
+            [&](syntaxNode* root, int pos){
+                switch(pos) {
+                    case -1: {
+                        root->hashData.add( strPlace, new int(getNewTmp()) );
+                    } break;
+                    case 1: break;
+                    case 0: {
+                        syntaxNode* target = root->child[pos];
+                        assert(target);
+                        assert( target->hashData.has(strValue) );
+                        int* ptrValFromE = *(int**)target->hashData.get(strValue);
+                        assert(ptrValFromE);
+                        root->hashData.add(strValue, new int(*ptrValFromE));
+                    } break;
+                    case 2: {
+                        syntaxNode* target0 = root->child[0];
+                        syntaxNode* target = root->child[pos];
+                        assert(target0);
+                        assert(target);
+                        assert( target->hashData.has(strValue) );
+                        int* ptrValFromT = *(int**)target->hashData.get(strValue);
+                        assert(ptrValFromT);
+                        root->hashData.add(strValue, new int(*ptrValFromT));
+                        printf("L-%d\t",getLineNum());
+                        printf("t%d = t%d + t%d\n",*(int*)*root->hashData.get(strPlace), *(int*)*target0->hashData.get(strPlace), *(int*)*target->hashData.get(strPlace));
+                    } break;
+                }
+                return true;
+            },
+            /* 4 T-> P */
+            [&](syntaxNode* root, int pos){
+                switch(pos) {
+                    case -1: {
+                        //root->hashData.add( strPlace, new int(getNewTmp()) );
+                    } break;
+                    case 0: {
+                        syntaxNode* target = root->child[pos];
+                        assert(target);
+                        assert( target->hashData.has(strValue) );
+                        int* ptrValFromP = *(int**)target->hashData.get(strValue);
+                        assert(ptrValFromP);
+                        root->hashData.add(strValue, new int(*ptrValFromP));
+                        //printf("L-%d\t",getLineNum());
+                        root->hashData.add( strPlace, new int(*(int*)*target->hashData.get(strPlace)) );
+                        //printf("t%d = t%d\n", *(int*)*root->hashData.get(strPlace), *(int*)*target->hashData.get(strPlace));
+                    } break;
+                }
+                return true;
+            },
+            /* 5 T-> T + P */
+            [&](syntaxNode* root, int pos){
+                switch(pos) {
+                    case -1: {
+                        root->hashData.add( strPlace, new int(getNewTmp()) );
+                    } break;
+                    case 1: break;
+                    case 0: {
+                        syntaxNode* target = root->child[pos];
+                        assert(target);
+                        assert( target->hashData.has(strValue) );
+                        int* ptrValFromT = *(int**)target->hashData.get(strValue);
+                        assert(ptrValFromT);
+                        root->hashData.add(strValue, new int(*ptrValFromT));
+                    } break;
+                    case 2: {
+                        syntaxNode* target0 = root->child[0];
+                        syntaxNode* target = root->child[pos];
+                        assert(target0);
+                        assert(target);
+                        assert( target->hashData.has(strValue) );
+                        int* ptrValFromP = *(int**)target->hashData.get(strValue);
+                        assert(ptrValFromP);
+                        root->hashData.add(strValue, new int(*ptrValFromP));
+                        printf("L-%d\t",getLineNum());
+                        printf("t%d = t%d + t%d\n", *(int*)*root->hashData.get(strPlace), *(int*)*target0->hashData.get(strPlace), *(int*)*target->hashData.get(strPlace));
+                    } break;
+                }
+                return true;
+            },
+            /* 6 P-> NUM */
+            [&](syntaxNode* root, int pos){
+                switch(pos) {
+                    case -1: {
+                        root->hashData.add( strPlace, new int(getNewTmp()) );
+                    } break;
+                    case 0: {
+                        syntaxNode* target = root->child[pos];
+                        assert(target);
+                        int valFromNum = clUtils::atoi( target->getLex() );
+                        root->hashData.add(strValue, new int(valFromNum));
+                        printf("L-%d\t",getLineNum());
+                        printf("t%d = [%d]\n", *(int*)*root->hashData.get(strPlace), *(int*)*root->hashData.get(strValue));
+                    } break;
+                }
+                return true;
+            },
+            /* 7 P-> ( E ) */
+            [&](syntaxNode* root, int pos){
+                switch(pos) {
+                    case -1: {
+                        //root->hashData.add( strPlace, new int(getNewTmp()) );
+                    } break;
+                    case 0: case 2: break;
+                    case 1: {
+                        syntaxNode* target = root->child[pos];
+                        assert(target);
+                        assert( target->hashData.has(strValue) );
+                        int* ptrValFromE = *(int**)target->hashData.get(strValue);
+                        assert(ptrValFromE);
+                        root->hashData.add(strValue, new int(*ptrValFromE));
+                        //printf("L-%d\t",getLineNum());
+                        root->hashData.add( strPlace, new int(*(int*)*target->hashData.get(strPlace)) );
+                        //printf("t%d = t%d\n", *(int*)*root->hashData.get(strPlace), *(int*)*target->hashData.get(strPlace));
+                    } break;
+                }
+                return true;
+            },
+        };
+
+        ///准备怎么制导呢？
+
+        dfs(ptrSyntaxTreeRoot, transFuncArr);
+        printf("\n");
         return *this;
     }
 
@@ -439,8 +664,8 @@ int main()
 {
 
     fstream fileSyntax, fileLex;
-    fileSyntax.open("cfg.146.txt",ios_base::in );
-    fileLex.open("lex.146.txt", ios_base::in);
+    fileSyntax.open("cfg.4opera.txt",ios_base::in );
+    fileLex.open("lex.4opera.txt", ios_base::in);
 
     syntaxParser parser;
     parser.
@@ -456,6 +681,8 @@ int main()
         showActionGotoTable().
         inputLex(fileLex).
         runSyntaxAnalyse().
+        showSyntaxTree().
+        syntaxDirectedTranslation().
         nop();
 
     cout << "Hello world!" << endl;

@@ -1,36 +1,64 @@
 #ifndef SYNTAXTREE_H_INCLUDED
 #define SYNTAXTREE_H_INCLUDED
 
-///è¯­æ³•æ ‘å®šä¹‰ï¼ŒèŠ‚ç‚¹æ„é€ ç­‰
+///Óï·¨Ê÷¶¨Òå£¬½Úµã¹¹ÔìµÈ
 #include <deque>
 #include "token.h"
-
+#include "clUtils.h"
 using namespace std;
 
 class syntaxNode;
 
 class syntaxNode {
 public:
-    Token* ptrToken; ///å¶å­èŠ‚ç‚¹çš„å¯¹åº”è¯æ³•æ•°æ®
+    Token* ptrToken; ///Ò¶×Ó½ÚµãµÄ¶ÔÓ¦´Ê·¨Êı¾İ
     Production* ptrPdt;
+    syntaxNode* ptrParent;
     deque<syntaxNode*> child;
-    syntaxNode(Token* _ptr, Production* _pdt = NULL) : ptrToken(_ptr), ptrPdt(_pdt) {}
-    void print(bool breakLine = true, int dep = 0) {
-
-        for(int i=0;i<dep;i++)
-            printf(" ");
-        printf("Addr:%x", this);
+    D1Map<string,void*> hashData;
+    syntaxNode(Token* _ptr, Production* _pdt = NULL) : ptrToken(_ptr), ptrPdt(_pdt), ptrParent(NULL) {}
+    ~syntaxNode() {
+        for(auto ptrSNode : child) {
+            for(auto item: hashData  ) {
+                delete item.second;
+            }
+            delete ptrSNode;
+        }
+    }
+    string getLex() {
+        if ( NULL == ptrToken ) {
+            return "";
+        }
+        else return ptrToken->lexData;
+    }
+    void print(bool breakLine = true, int dep = 0, bool hasNext = false) {
+        static bool vis[1000];
+        if ( 0 == dep ) memset(vis,false,sizeof(vis));
+        vis[dep] = true;
+        for(int i=0;i<dep-1;i++) {
+            if ( vis[i] == true ) printf(" ©¦");
+            else printf("  ");
+        }
+        if ( dep > 0 )
+            if ( true == hasNext )
+                printf(" ©À");
+            else
+                printf(" ©¸");
+        //printf("Addr:%x", this);
         if( 0 == child.size() )
             ptrToken->print(false);
         else
             ptrPdt->ptrTerm->print(false);
         printf("\n");
+        int cnt = 0;
         for(auto ptrSNode : child) {
-            for(int i=0;i<dep+1;i++)
-                printf(" ");
-            ptrSNode->print(false, dep+1);
+            if ( cnt == child.size()-1 ) {
+                vis[dep] = false;
+            }
+            ptrSNode->print(false, dep+1, cnt != child.size()-1);
+            cnt++;
         }
-        if( 0 == child.size())printf("\n");
+       // if( 0 == child.size())printf("\n");
     }
 };
 

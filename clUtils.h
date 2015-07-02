@@ -1,10 +1,56 @@
 ﻿#ifndef CLUTILS_H_INCLUDED
 #define CLUTILS_H_INCLUDED
 
+#include <cstdlib>
+#include <cstring>
 #include <map>
 #include <iterator>
 
 using namespace std;
+
+class clUtils {
+public:
+    static int atoi(const string& str) {
+        int ret = 0;
+        for(auto ch : str) {
+            ret *= 10;
+            ret += ch-'0';
+        }
+        return ret;
+    }
+};
+
+template<typename _Key, typename _Ele>
+class D1Map {
+private:
+    typedef map<_Key, _Ele> mapKE;
+    mapKE data;
+public:
+    D1Map() {}
+    typename mapKE::iterator begin() { return data.begin(); }
+    typename mapKE::iterator end() { return data.end(); }
+    bool add(const _Key& key, const _Ele& ele, bool _replace = false) {
+        typename mapKE::iterator kter = data.find(key);
+        if ( kter == data.end() ) {
+            data.insert( make_pair(key,ele) );
+            return true;
+        }
+        if ( true == _replace ) {
+            kter->second = ele;
+            return true;
+        }
+        return false;
+    }
+    bool has( const _Key& key ) {
+        return !! get(key );
+    }
+    _Ele* get( const _Key& key ) {
+        typename mapKE::iterator kter = data.find(key);
+        if ( kter == data.end() ) return NULL;
+        else return &kter->second;
+    }
+
+};
 
 template<typename _Row, typename _Col, typename _Ele>
 class D2Map {
@@ -14,12 +60,8 @@ private:
     mapRowCol data;
 public:
     D2Map() {}
-    typename mapRowCol::iterator begin() {
-        return data.begin();
-    }
-    typename mapRowCol::iterator end() {
-        return data.end();
-    }
+    inline typename mapRowCol::iterator begin() { return data.begin(); }
+    inline typename mapRowCol::iterator end() { return data.end(); }
 
     typename mapCol::iterator colBegin( _Row& row) {
         typename mapRowCol::iterator rter = data.find( row );
@@ -32,7 +74,7 @@ public:
         return rter->second.end();
     }
 
-    bool add( const _Row& row, const _Col& col, _Ele ele, bool _replace = true ) {
+    bool add( const _Row& row, const _Col& col, _Ele ele, bool _replace = false ) {
         typename mapRowCol::iterator rter = data.find( row );
         if ( rter == data.end() ) {
             data.insert( make_pair( row, mapCol() ) );
@@ -43,9 +85,12 @@ public:
             rter->second.insert( make_pair( col, ele ) );
             return true;
         }
-        if ( _replace ) {
+        if ( true == _replace ) {
             ctor->second = ele;
             return true;
+        }
+        else {
+            printf("CCCCCCCC\n");
         }
         return false;
 

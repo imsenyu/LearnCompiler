@@ -299,23 +299,23 @@ private:
      *   判定其是否满足闭包移进规则
      *     若是，求First集，并生成新的扩展项目
      */
-        printf(" Once CaclClosure Begin\n");
+        //printf(" Once CaclClosure Begin\n");
         for(auto ptrSEItem : collection) {
             StateExtItem& SEItem = *ptrSEItem;
             Term* NTerminal = NULL;
             vector<Term*> vecNextTerms;
 
-            printf("  ");ptrSEItem->print(true);
+            //printf("  ");ptrSEItem->print(true);
             if ( splitStateExtItem( SEItem, NTerminal, vecNextTerms ) ) {
-                printf("    ");printf(" ok\n");
-                printf("    ");SEItem.print(false); NTerminal->print(true);
+                //printf("    ");printf(" ok\n");
+                //printf("    ");SEItem.print(false); NTerminal->print(true);
                 vecNextTerms.push_back( SEItem.next );
 
-                printf("     ");for(auto ptrTerm : vecNextTerms) ptrTerm->print(false);
-                printf("\n");
+                //printf("     ");for(auto ptrTerm : vecNextTerms) ptrTerm->print(false);
+                //printf("\n");
 
                 set<Term*> firstSet = calcFirstSet(vecNextTerms);
-                printf("     firstSet(%d)\n", firstSet.size());
+                //printf("     firstSet(%d)\n", firstSet.size());
                 for( auto pdtPtr : NTerminal->vecPdtPtrs  ) {
                     for( auto fPtrTerm : firstSet ) {
                         StateExtItem* p = new StateExtItem( pdtPtr->vecSItems[0] , fPtrTerm );
@@ -324,7 +324,7 @@ private:
                 }
             }
         }
-        printf(" Once CalcClosure End\n");
+        //printf(" Once CalcClosure End\n");
     }
     bool compareCollection(const StateCollection& a, const StateCollection& b) const {
     /*
@@ -394,10 +394,22 @@ public:
                 int stateToId = col.second;
                 if ( true == ptrStepTerm->isTerminal ) {
                     ///Step 移进
-                    table.add( stateFromId, ptrStepTerm, Action(Action::Type::Step, stateToId) );
+                    bool ret = table.add( stateFromId, ptrStepTerm, Action(Action::Type::Step, stateToId) );
+                    if ( false == ret ) {
+                        printf("Conflict\n");
+                        table.get(stateFromId,ptrStepTerm)->print(true);
+                        printf("Step, %d\n",stateToId);
+
+                    }
                 }
                 else {
-                    table.add( stateFromId, ptrStepTerm, Action(Action::Type::Goto, stateToId) );
+                    bool ret = table.add( stateFromId, ptrStepTerm, Action(Action::Type::Goto, stateToId) );
+                    if ( false == ret ) {
+                        printf("Conflict\n");
+                        table.get(stateFromId,ptrStepTerm)->print(true);
+                        printf("Goto, %d\n",stateToId);
+
+                    }
                 }
             }
         }
@@ -406,8 +418,15 @@ public:
         TypeVectorStates& vecStates = *ptrVec;
         for(int fromId = 0;fromId < vecStates.size();fromId++) {
             for( auto ptrSEItem : vecStates[fromId]->collection ) {
-                if ( false == ptrSEItem->hasNextSItem() )
-                    table.add( fromId, ptrSEItem->next, Action(Action::Type::Recur, ptrSEItem->ptrItem->ptrPdt->pId) );
+                if ( false == ptrSEItem->hasNextSItem() ) {
+                    bool ret = table.add( fromId, ptrSEItem->next, Action(Action::Type::Recur, ptrSEItem->ptrItem->ptrPdt->pId) );
+                    if ( false == ret ) {
+                        printf("Conflict\n");
+                        table.get(fromId,ptrSEItem->next)->print(true);
+                        printf("Recur, %d\n",ptrSEItem->ptrItem->ptrPdt->pId);
+
+                    }
+                }
             }
         }
         ///还有最后一个ACC
@@ -421,7 +440,14 @@ public:
             }
         }
         for(auto accId : vecAcc) {
-            table.add( accId, endTermPtr, Action(Action::Type::Acc, -1) );
+            bool ret = table.add( accId, endTermPtr, Action(Action::Type::Acc, -1), true );
+            ///可覆盖
+            if ( false == ret ) {
+                printf("Conflict\n");
+                table.get(accId, endTermPtr)->print(true);
+                printf("Acc, %d\n",-1);
+
+            }
         }
         delete target;
         return true;
