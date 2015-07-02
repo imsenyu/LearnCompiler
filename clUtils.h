@@ -1,10 +1,7 @@
 ﻿#ifndef CLUTILS_H_INCLUDED
 #define CLUTILS_H_INCLUDED
 
-#include <cstdlib>
-#include <cstring>
-#include <map>
-#include <iterator>
+#include "stdafx.h"
 
 using namespace std;
 

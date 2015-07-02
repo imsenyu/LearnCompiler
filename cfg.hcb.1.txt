@@ -1,0 +1,17 @@
+8
+_S 0
+S 0
+A 0
+E 0
+id 1
+:= 1
++ 1
+; 1
+7
+_S 1 S
+S 3 S ; A
+S 1 A
+A 1 E
+A 3 id := E
+E 3 E + id
+E 1 id

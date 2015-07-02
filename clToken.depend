@@ -4,42 +4,27 @@
 
 1435730460 e:\document\desktop\compiler2015\cltoken\closure.h
 
-1434645555 source:e:\document\desktop\compiler2015\cltoken\syntaxtree.cpp
+1435852128 source:e:\document\desktop\compiler2015\cltoken\syntaxtree.cpp
 	"syntaxTree.h"
 
-1435816325 e:\document\desktop\compiler2015\cltoken\syntaxtree.h
-	<deque>
-	"token.h"
+1435852265 e:\document\desktop\compiler2015\cltoken\syntaxtree.h
+	"stdafx.h"
+	"term.h"
+	"production.h"
 	"clUtils.h"
 
-1435817283 source:e:\document\desktop\compiler2015\cltoken\token.cpp
+1435850520 source:e:\document\desktop\compiler2015\cltoken\token.cpp
 	"token.h"
 
-1435818405 e:\document\desktop\compiler2015\cltoken\token.h
-	<iostream>
-	<cstdio>
-	<vector>
-	<string>
-	<set>
-	<functional>
-	"clUtils.h"
+1435852184 e:\document\desktop\compiler2015\cltoken\token.h
 
-1435821711 source:e:\document\desktop\compiler2015\cltoken\main.cpp
+1435846708 source:e:\document\desktop\compiler2015\cltoken\main.cpp
 	<iostream>
 	<cstdio>
 	<cstdlib>
 	<string>
-	<vector>
-	<set>
-	<stack>
-	<map>
-	<algorithm>
-	<functional>
 	<fstream>
-	<cassert>
-	"clUtils.h"
-	"token.h"
-	"syntaxTree.h"
+	"parser.h"
 
 1434675641 source:e:\document\desktop\compiler2015\cltoken\finiteautoman.cpp
 	"finiteAutoman.h"
@@ -60,21 +45,50 @@
 
 1435583215 e:\document\desktop\compiler2015\cltoken\syntaxconfig.h
 
-1435818523 e:\document\desktop\compiler2015\cltoken\clutils.h
-	<cstdlib>
-	<cstring>
-	<map>
-	<iterator>
+1435851224 e:\document\desktop\compiler2015\cltoken\clutils.h
+	"stdafx.h"
 
 1435817095 source:e:\document\desktop\compiler2015\cltoken\clutils.cpp
 	"clUtils.h"
 
-1435817556 e:\document\desktop\compiler2015\cltoken\parser.h
+1435852195 e:\document\desktop\compiler2015\cltoken\parser.h
+	"stdafx.h"
+	"stdafx.h"
+	"clUtils.h"
+	"term.h"
+	"production.h"
+	"stateItem.h"
+	"stateExtItem.h"
+	"stateSet.h"
+	"action.h"
+	"syntaxTree.h"
+
+1435817636 source:e:\document\desktop\compiler2015\cltoken\parser.cpp
+	"parser.h"
+	"clUtils.h"
+
+1435851189 e:\document\desktop\compiler2015\cltoken\term.h
+	"stdafx.h"
+	"production.h"
+
+1435851213 e:\document\desktop\compiler2015\cltoken\production.h
+	"stdafx.h"
+	"term.h"
+	"stateItem.h"
+
+1435851208 e:\document\desktop\compiler2015\cltoken\stateitem.h
+	"stdafx.h"
+	"term.h"
+	"production.h"
+
+1435851287 e:\document\desktop\compiler2015\cltoken\stdafx.h
 	<iostream>
 	<cstdio>
 	<cstdlib>
+	<cstring>
 	<string>
 	<vector>
+	<deque>
 	<set>
 	<stack>
 	<map>
@@ -82,11 +96,40 @@
 	<functional>
 	<fstream>
 	<cassert>
-	"clUtils.h"
-	"token.h"
-	"syntaxTree.h"
 
-1435817636 source:e:\document\desktop\compiler2015\cltoken\parser.cpp
-	"parser.h"
+1435851261 source:e:\document\desktop\compiler2015\cltoken\production.cpp
+	"production.h"
+
+1435850899 source:e:\document\desktop\compiler2015\cltoken\stateitem.cpp
+	"stateItem.h"
+
+1435851537 e:\document\desktop\compiler2015\cltoken\stateextitem.h
+	"stdafx.h"
+	"stateItem.h"
+	"term.h"
+
+1435851064 source:e:\document\desktop\compiler2015\cltoken\term.cpp
+	"term.h"
+	"iostream"
+
+1435851558 source:e:\document\desktop\compiler2015\cltoken\stateextitem.cpp
+	"stateExtItem.h"
+
+1435851803 e:\document\desktop\compiler2015\cltoken\stateset.h
+	"stdafx.h"
+	"stateExtItem.h"
+	"term.h"
+
+1435852045 e:\document\desktop\compiler2015\cltoken\action.h
+	"stdafx.h"
+	"term.h"
+	"stateSet.h"
 	"clUtils.h"
+	"production.h"
+
+1435851852 source:e:\document\desktop\compiler2015\cltoken\stateset.cpp
+	"stateSet.h"
+
+1435852060 source:e:\document\desktop\compiler2015\cltoken\action.cpp
+	"action.h"
 

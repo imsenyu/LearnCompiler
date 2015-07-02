@@ -1,65 +1,42 @@
 #ifndef SYNTAXTREE_H_INCLUDED
 #define SYNTAXTREE_H_INCLUDED
 
-///语法树定义，节点构造等
-#include <deque>
-#include "token.h"
+#include "stdafx.h"
+#include "term.h"
+#include "production.h"
 #include "clUtils.h"
-using namespace std;
 
+class Term;
+class Token;
 class syntaxNode;
+
+/*
+ * class Token
+ * description: 词法分析器输出的词
+ * data:    对应的语法的词Term，拥有的综合属性lexData
+ * method:  print(输出语法的词和综合属性;可选换行)
+ */
+class Token {
+public:
+    Term* ptrTerm;
+    string lexData;
+    Token(Term* _ptr, const string& _str): ptrTerm(_ptr), lexData(_str) {}
+    void print(bool breakLine = true) const;
+};
 
 class syntaxNode {
 public:
-    Token* ptrToken; ///叶子节点的对应词法数据
-    Production* ptrPdt;
-    syntaxNode* ptrParent;
-    deque<syntaxNode*> child;
-    D1Map<string,void*> hashData;
+    Token* ptrToken; ///该语法节点对应的输入词
+    Production* ptrPdt; ///非叶子节点对用的规约产生式
+    syntaxNode* ptrParent; ///父节点
+    deque<syntaxNode*> child; ///孩子节点
+    D1Map<string,void*> hashData; ///存储所有属性数据
     syntaxNode(Token* _ptr, Production* _pdt = NULL) : ptrToken(_ptr), ptrPdt(_pdt), ptrParent(NULL) {}
-    ~syntaxNode() {
-        for(auto ptrSNode : child) {
-            for(auto item: hashData  ) {
-                delete item.second;
-            }
-            delete ptrSNode;
-        }
-    }
-    string getLex() {
-        if ( NULL == ptrToken ) {
-            return "";
-        }
-        else return ptrToken->lexData;
-    }
-    void print(bool breakLine = true, int dep = 0, bool hasNext = false) {
-        static bool vis[1000];
-        if ( 0 == dep ) memset(vis,false,sizeof(vis));
-        vis[dep] = true;
-        for(int i=0;i<dep-1;i++) {
-            if ( vis[i] == true ) printf(" │");
-            else printf("  ");
-        }
-        if ( dep > 0 )
-            if ( true == hasNext )
-                printf(" ├");
-            else
-                printf(" └");
-        //printf("Addr:%x", this);
-        if( 0 == child.size() )
-            ptrToken->print(false);
-        else
-            ptrPdt->ptrTerm->print(false);
-        printf("\n");
-        int cnt = 0;
-        for(auto ptrSNode : child) {
-            if ( cnt == child.size()-1 ) {
-                vis[dep] = false;
-            }
-            ptrSNode->print(false, dep+1, cnt != child.size()-1);
-            cnt++;
-        }
-       // if( 0 == child.size())printf("\n");
-    }
+    ~syntaxNode();
+    ///获得对应输入词的具体文本
+    string getLex() const;
+    ///递归输出语法树，dep = 0则表示根节点, hasNext用于分支线的绘制
+    void print(bool breakLine = true, int dep = 0, bool hasNext = false) const;
 };
 
 
