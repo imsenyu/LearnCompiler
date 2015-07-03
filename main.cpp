@@ -12,16 +12,16 @@ using namespace std;
 int main()
 {
     fstream fileSyntax, fileLex;
-    fileSyntax.open("cfg.4opera.txt",ios_base::in );
-    fileLex.open("lex.4opera.txt", ios_base::in);
+    fileSyntax.open("cfg.clike.txt",ios_base::in );
+    fileLex.open("lex.clike.txt", ios_base::in);
 
-    syntaxParser parser(false);
+    syntaxParser parser(true);
     parser.
         ConstructLR1(fileSyntax).
         ConstructTree(fileLex).
         nop();
 
-    ArithmeticTranslator trans( &parser );
+    CLikeTranslator trans( &parser );
     trans.
         translate().
         nop();

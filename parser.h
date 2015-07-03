@@ -129,6 +129,8 @@ public:
             ret.push_back(ptrPdt);
         return ret;
     }
+    inline bool getIsTree() const { return _isTree; }
+    inline bool getIsLR() const { return _isLR; }
     //syntaxParse* buildStateTable
 };
 

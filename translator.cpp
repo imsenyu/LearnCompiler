@@ -37,6 +37,7 @@ int Translator::getNewTmp(bool start) {
 
 ///虚函数扩展，可自行定义，然后根据自行定义执行完整的翻译
 Translator& Translator::translate() {
+    if ( NULL == ptrParser || false == ptrParser->getIsTree() ) return *this;
     vecTransFunc = getTransFunc();
     auto vecPdt = ptrParser->getProduction();
     if ( vecPdt.size() > vecTransFunc.size() ) {
@@ -46,6 +47,7 @@ Translator& Translator::translate() {
 
     translateRecur(ptrParser->getSyntaxTree(), vecTransFunc);
     printf("\n");
+    return *this;
 }
 
 ///定义成虚 =0函数，必须派生。
@@ -154,6 +156,18 @@ P 3 ( E )
                     PASS<int>( root["place"], root[1]["place"] );
                 } break;
             }
+            return true;
+        },
+    };
+
+    return vector<TransFuncType>( transFuncArr, transFuncArr+sizeof(transFuncArr)/sizeof(TransFuncType) );
+}
+
+
+vector<Translator::TransFuncType> CLikeTranslator::getTransFunc() {
+
+    TransFuncType transFuncArr[] = {
+        [&](syntaxNode& root, int pos){
             return true;
         },
     };

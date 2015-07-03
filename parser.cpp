@@ -1,5 +1,5 @@
 #include "parser.h"
-
+#include <iostream>
 syntaxParser& syntaxParser::inputTerm(istream& in) {
 /*
  * 先读取个数，然后读取id str isTerminal, 加入到 mpTerm中

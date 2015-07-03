@@ -35,4 +35,10 @@ public:
     virtual vector<TransFuncType> getTransFunc();
 };
 
+class CLikeTranslator : public Translator {
+public:
+    CLikeTranslator(syntaxParser* _parser = NULL): Translator(_parser) {}
+    virtual vector<TransFuncType> getTransFunc();
+};
+
 #endif // TRANSLATOR_H_INCLUDED

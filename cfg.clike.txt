@@ -1,0 +1,63 @@
+34
+_P 0
+P 0
+D 0
+CS 0
+S 0
+BEp 0
+CEp 0
+CS 0
+BET 0
+BEF 0
+CET 0
+CEF 0
+{ 1
+} 1
+( 1
+) 1
+int 1
+; 1
+ID 1
+NUM 1
+do 1
+if 1
+then 1
+else 1
+endif 1
+while 1
+= 1
+and 1
+or 1
+relop 1
++ 1
+- 1
+* 1
+/ 1
+
+26
+_P 1 P
+P 4 { D CS }
+D 4 D int ID ;
+D 3 int ID ;
+S 9 if ( BEp ) then S else S endif
+S 7 if ( BEp ) then S endif
+S 6 while ( BEp ) do S
+S 4 ID = CEp ;
+S 3 { CS }
+CS 2 S CS
+CS 1 S
+BEp 1 BET
+BEp 3 BEp or BET
+BET 1 BEF
+BET 3 BET and BEF
+BEF 3 CEp relop CEp
+BEF 1 CEp
+CEp 1 CET
+CEp 3 CEp + CET
+CEp 3 CEp - CET
+CET 1 CEF
+CET 3 CET * CEF
+CET 3 CET / CEF
+CEF 1 ID
+CEF 1 NUM
+CEF 3 ( CEp )

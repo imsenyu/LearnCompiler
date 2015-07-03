@@ -95,9 +95,6 @@ public:
             ctor->second = ele;
             return true;
         }
-        else {
-            printf("CCCCCCCC\n");
-        }
         return false;
 
     }
