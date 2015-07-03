@@ -26,6 +26,7 @@ public:
 
 class syntaxNode {
 public:
+    static void* nullHashData;
     Token* ptrToken; ///该语法节点对应的输入词
     Production* ptrPdt; ///非叶子节点对用的规约产生式
     syntaxNode* ptrParent; ///父节点
@@ -37,7 +38,12 @@ public:
     string getLex() const;
     ///递归输出语法树，dep = 0则表示根节点, hasNext用于分支线的绘制
     void print(bool breakLine = true, int dep = 0, bool hasNext = false) const;
+    void*& operator[](const string& key);
+    syntaxNode& operator[](const int pos);
+    template<typename _Key, typename _Ele>
+    bool add(const _Key& key, const _Ele& ele, bool _replace = false) {
+        return hashData.add(key,ele,_replace);
+    }
 };
-
 
 #endif // SYNTAXTREE_H_INCLUDED

@@ -5,8 +5,7 @@
 
 using namespace std;
 
-class clUtils {
-public:
+namespace clUtils{
     static int atoi(const string& str) {
         int ret = 0;
         for(auto ch : str) {
@@ -14,6 +13,16 @@ public:
             ret += ch-'0';
         }
         return ret;
+    }
+    template<typename _Ele>
+    static void PASS(void*& dest, void* src) {
+        if ( NULL != (_Ele*)dest )
+            delete (_Ele*)dest;
+        dest = (_Ele*)src;
+    }
+    template<typename _Ele>
+    static _Ele GET(void*& src) {
+        return *(_Ele*)src;
     }
 };
 

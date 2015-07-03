@@ -11,6 +11,8 @@
 #include "action.h"
 #include "syntaxTree.h"
 
+using namespace clUtils;
+
 class syntaxParser;
 
 class syntaxParser {
@@ -69,16 +71,16 @@ public:
     syntaxParser& runSyntaxAnalyse();
     syntaxParser& showSyntaxTree();
 
-    void dfs(syntaxNode* root, function<bool(syntaxNode* root, int pos)> *func) {
+    void dfs(syntaxNode* root, function<bool(syntaxNode& root, int pos)> *func) {
         deque<syntaxNode*>& child = root->child;
         if ( NULL == root->ptrPdt ) return;
         int pId = root->ptrPdt->pId;
-        function<bool(syntaxNode* root, int pos)>& f = func[pId];
+        function<bool(syntaxNode& root, int pos)>& f = func[pId];
 
-        f(root, -1);
+        f(*root, -1);
         for(int c=0;c<child.size();c++) {
             dfs(child[c], func);
-            f(root, c);
+            f(*root, c);
         }
 
     }
@@ -110,177 +112,100 @@ P 1 NUM
 P 3 ( E )
          */
         const string strValue("value"), strPlace("place");
-        function<bool(syntaxNode* root, int pos)> transFuncArr[] = {
+        function<bool(syntaxNode& root, int pos)> transFuncArr[] = {
             /* 0 _S->S */
-            [&](syntaxNode* root, int pos){ /*do nothing*/ return true; },
+            [&](syntaxNode& root, int pos){ /*do nothing*/ return true; },
             /* 1 S-> E */
-            [&](syntaxNode* root, int pos){
+            [&](syntaxNode& root, int pos){
                 switch(pos) {
                     case -1: {
-                        root->hashData.add( strPlace, new int(getNewTmp()) );
+                        root["place"] = new int( getNewTmp() );
                     } break;
                     case 0: {
-                        /*
-                         * 需要：1. 查找符号表; 2.加入符号表; 3.获得指定元素 最好,Item(k)-> 4. 方便的设置指定元素 hash值和获取， 对获取的数据快速类型转换
-                         */
-                        /*
-                        _LookUp("str") -> Addr
-                        _AddVar("str") -> bool 是否成功
-                        _GetItem(root,pos) -> syntaxNode*
-                        _SetData( item, "hashStr", data )
-                        _GetData( item, "hashStr" )
-                        _GenCode( line, 'op', '1' ,'2', 'dest' );
-                        ///需要做的 把 E的value设置给 S的value
-                        */
-
-
-                        syntaxNode* target = root->child[pos];
-                        assert(target);
-                        assert( target->hashData.has(strValue) );
-                        int* ptrValFromE = *(int**)target->hashData.get(strValue);
-                        assert(ptrValFromE);
-                        root->hashData.add(strValue, new int(*ptrValFromE));
-                        printf("L-%d\t",getLineNum());
-                        printf("t%d = t%d\n", *(int*)*root->hashData.get(strPlace), *(int*)*target->hashData.get(strPlace));
-                        printf("Need t%d\n", *(int*)*root->hashData.get(strPlace));
+                        PASS<int>( root["value"], root[0]["value"] );
+                        printf("L-%d\t", getLineNum());
+                        printf("t%d = t%d\n", GET<int>( root["place"] ), GET<int>( root[0]["place"] )  );
+                        printf("Need t%d = %d\n", GET<int>( root["place"] ), GET<int>( root["value"] ) );
                     } break;
                 }
                 return true;
             },
             /* 2 E-> T */
-            [&](syntaxNode* root, int pos){
+            [&](syntaxNode& root, int pos){
                 switch(pos) {
-                    case -1: {
-                        //root->hashData.add( strPlace, new int(getNewTmp()) );
-                    } break;
+                    case -1:  break;
                     case 0: {
-                        syntaxNode* target = root->child[pos];
-                        assert(target);
-                        assert( target->hashData.has(strValue) );
-                        int* ptrValFromT = *(int**)target->hashData.get(strValue);
-                        assert(ptrValFromT);
-                        root->hashData.add(strValue, new int(*ptrValFromT));
-                        //printf("L-%d\t",getLineNum());
-                        root->hashData.add( strPlace, new int(*(int*)*target->hashData.get(strPlace)) );
-                        //printf("t%d = t%d\n",*(int*)*root->hashData.get(strPlace), *(int*)*target->hashData.get(strPlace));
+                        PASS<int>( root["value"], root[0]["value"] );
+                        PASS<int>( root["place"], root[0]["place"] );
                     } break;
                 }
                 return true;
             },
             /* 3 E-> E + T */
-            [&](syntaxNode* root, int pos){
+            [&](syntaxNode& root, int pos){
                 switch(pos) {
                     case -1: {
-                        root->hashData.add( strPlace, new int(getNewTmp()) );
+                        PASS<int>( root["place"], new int(getNewTmp()) );
                     } break;
                     case 1: break;
-                    case 0: {
-                        syntaxNode* target = root->child[pos];
-                        assert(target);
-                        assert( target->hashData.has(strValue) );
-                        int* ptrValFromE = *(int**)target->hashData.get(strValue);
-                        assert(ptrValFromE);
-                        root->hashData.add(strValue, new int(*ptrValFromE));
-                    } break;
+                    case 0: break;
                     case 2: {
-                        syntaxNode* target0 = root->child[0];
-                        syntaxNode* target = root->child[pos];
-                        assert(target0);
-                        assert(target);
-                        assert( target->hashData.has(strValue) );
-                        int* ptrValFromT = *(int**)target->hashData.get(strValue);
-                        assert(ptrValFromT);
-                        root->hashData.add(strValue, new int(*ptrValFromT));
+                        PASS<int>( root["value"], new int(  GET<int>( root[0]["value"] ) + GET<int>( root[2]["value"] ) ) );
                         printf("L-%d\t",getLineNum());
-                        printf("t%d = t%d + t%d\n",*(int*)*root->hashData.get(strPlace), *(int*)*target0->hashData.get(strPlace), *(int*)*target->hashData.get(strPlace));
+                        printf("t%d = t%d + t%d\n", GET<int>(root["place"]), GET<int>(root[0]["place"]), GET<int>(root[2]["place"]));
                     } break;
                 }
                 return true;
             },
             /* 4 T-> P */
-            [&](syntaxNode* root, int pos){
+            [&](syntaxNode& root, int pos){
                 switch(pos) {
-                    case -1: {
-                        //root->hashData.add( strPlace, new int(getNewTmp()) );
-                    } break;
+                    case -1: break;
                     case 0: {
-                        syntaxNode* target = root->child[pos];
-                        assert(target);
-                        assert( target->hashData.has(strValue) );
-                        int* ptrValFromP = *(int**)target->hashData.get(strValue);
-                        assert(ptrValFromP);
-                        root->hashData.add(strValue, new int(*ptrValFromP));
-                        //printf("L-%d\t",getLineNum());
-                        root->hashData.add( strPlace, new int(*(int*)*target->hashData.get(strPlace)) );
-                        //printf("t%d = t%d\n", *(int*)*root->hashData.get(strPlace), *(int*)*target->hashData.get(strPlace));
+                        PASS<int>( root["value"], root[0]["value"] );
+                        PASS<int>( root["place"], root[0]["value"] );
                     } break;
                 }
                 return true;
             },
-            /* 5 T-> T + P */
-            [&](syntaxNode* root, int pos){
+            /* 5 T-> T * P */
+            [&](syntaxNode& root, int pos){
                 switch(pos) {
                     case -1: {
-                        root->hashData.add( strPlace, new int(getNewTmp()) );
+                        PASS<int>( root["place"], new int( getNewTmp() ) );
                     } break;
                     case 1: break;
-                    case 0: {
-                        syntaxNode* target = root->child[pos];
-                        assert(target);
-                        assert( target->hashData.has(strValue) );
-                        int* ptrValFromT = *(int**)target->hashData.get(strValue);
-                        assert(ptrValFromT);
-                        root->hashData.add(strValue, new int(*ptrValFromT));
-                    } break;
+                    case 0: break;
                     case 2: {
-                        syntaxNode* target0 = root->child[0];
-                        syntaxNode* target = root->child[pos];
-                        assert(target0);
-                        assert(target);
-                        assert( target->hashData.has(strValue) );
-                        int* ptrValFromP = *(int**)target->hashData.get(strValue);
-                        assert(ptrValFromP);
-                        root->hashData.add(strValue, new int(*ptrValFromP));
+                        PASS<int>( root["value"], new int(  GET<int>( root[0]["value"] ) * GET<int>( root[2]["value"] ) ) );
                         printf("L-%d\t",getLineNum());
-                        printf("t%d = t%d + t%d\n", *(int*)*root->hashData.get(strPlace), *(int*)*target0->hashData.get(strPlace), *(int*)*target->hashData.get(strPlace));
+                        printf("t%d = t%d * t%d\n", GET<int>(root["place"]), GET<int>(root[0]["place"]), GET<int>(root[2]["place"]));
                     } break;
                 }
                 return true;
             },
             /* 6 P-> NUM */
-            [&](syntaxNode* root, int pos){
+            [&](syntaxNode& root, int pos){
                 switch(pos) {
                     case -1: {
-                        root->hashData.add( strPlace, new int(getNewTmp()) );
+                        PASS<int>( root["place"], new int( getNewTmp() ) );
                     } break;
                     case 0: {
-                        syntaxNode* target = root->child[pos];
-                        assert(target);
-                        int valFromNum = clUtils::atoi( target->getLex() );
-                        root->hashData.add(strValue, new int(valFromNum));
-                        printf("L-%d\t",getLineNum());
-                        printf("t%d = [%d]\n", *(int*)*root->hashData.get(strPlace), *(int*)*root->hashData.get(strValue));
+                        PASS<int>( root["value"], new int( clUtils::atoi( root[0].getLex() ) ) );
+                        printf("L-%d\t", getLineNum());
+                        printf("t%d = [%d]\n", GET<int>(root["place"]), GET<int>(root["value"]));
                     } break;
                 }
                 return true;
             },
             /* 7 P-> ( E ) */
-            [&](syntaxNode* root, int pos){
+            [&](syntaxNode& root, int pos){
                 switch(pos) {
-                    case -1: {
-                        //root->hashData.add( strPlace, new int(getNewTmp()) );
-                    } break;
+                    case -1: break;
                     case 0: case 2: break;
                     case 1: {
-                        syntaxNode* target = root->child[pos];
-                        assert(target);
-                        assert( target->hashData.has(strValue) );
-                        int* ptrValFromE = *(int**)target->hashData.get(strValue);
-                        assert(ptrValFromE);
-                        root->hashData.add(strValue, new int(*ptrValFromE));
-                        //printf("L-%d\t",getLineNum());
-                        root->hashData.add( strPlace, new int(*(int*)*target->hashData.get(strPlace)) );
-                        //printf("t%d = t%d\n", *(int*)*root->hashData.get(strPlace), *(int*)*target->hashData.get(strPlace));
+                        PASS<int>( root["value"], root[1]["value"] );
+                        PASS<int>( root["place"], root[1]["place"] );
                     } break;
                 }
                 return true;

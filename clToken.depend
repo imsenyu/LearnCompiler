@@ -4,10 +4,10 @@
 
 1435730460 e:\document\desktop\compiler2015\cltoken\closure.h
 
-1435852128 source:e:\document\desktop\compiler2015\cltoken\syntaxtree.cpp
+1435897251 source:e:\document\desktop\compiler2015\cltoken\syntaxtree.cpp
 	"syntaxTree.h"
 
-1435852265 e:\document\desktop\compiler2015\cltoken\syntaxtree.h
+1435896209 e:\document\desktop\compiler2015\cltoken\syntaxtree.h
 	"stdafx.h"
 	"term.h"
 	"production.h"
@@ -18,13 +18,13 @@
 
 1435852184 e:\document\desktop\compiler2015\cltoken\token.h
 
-1435846708 source:e:\document\desktop\compiler2015\cltoken\main.cpp
+1435856391 source:e:\document\desktop\compiler2015\cltoken\main.cpp
 	<iostream>
 	<cstdio>
 	<cstdlib>
 	<string>
 	<fstream>
-	"parser.h"
+	"translator.h"
 
 1434675641 source:e:\document\desktop\compiler2015\cltoken\finiteautoman.cpp
 	"finiteAutoman.h"
@@ -45,13 +45,13 @@
 
 1435583215 e:\document\desktop\compiler2015\cltoken\syntaxconfig.h
 
-1435851224 e:\document\desktop\compiler2015\cltoken\clutils.h
+1435896884 e:\document\desktop\compiler2015\cltoken\clutils.h
 	"stdafx.h"
 
 1435817095 source:e:\document\desktop\compiler2015\cltoken\clutils.cpp
 	"clUtils.h"
 
-1435856268 e:\document\desktop\compiler2015\cltoken\parser.h
+1435897263 e:\document\desktop\compiler2015\cltoken\parser.h
 	"stdafx.h"
 	"clUtils.h"
 	"term.h"
@@ -130,4 +130,10 @@
 
 1435852060 source:e:\document\desktop\compiler2015\cltoken\action.cpp
 	"action.h"
+
+1435856467 e:\document\desktop\compiler2015\cltoken\translator.h
+	"parser.h"
+
+1435856375 source:e:\document\desktop\compiler2015\cltoken\translator.cpp
+	"translator.h"
 

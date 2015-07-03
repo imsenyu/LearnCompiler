@@ -1,5 +1,7 @@
 #include "syntaxTree.h"
 
+void* syntaxNode::nullHashData = NULL;
+
 void Token::print(bool breakLine) const{
     ptrTerm->print(false);
     cout<<" "<<lexData;
@@ -39,4 +41,16 @@ void syntaxNode::print(bool breakLine, int dep, bool hasNext) const {
         ptrSNode->print(false, dep+1, cnt != child.size()-1);
         cnt++;
     }
+}
+
+void*& syntaxNode::operator[](const string& key) {
+    if ( NULL == hashData.get( key ) )
+        hashData.add( key, NULL );
+    return *hashData.get(key);
+}
+
+syntaxNode& syntaxNode::operator[](const int pos) {
+    if ( pos < child.size() )
+        return *child[pos];
+    else throw "syntaxNode Out of Range";
 }
