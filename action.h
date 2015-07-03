@@ -39,9 +39,10 @@ public:
         TypeStateTable* _ptr = NULL,
         TypeVectorStates* _ptrVec = NULL,
         Production* _ptrPdt = NULL
-    ) : origin(_ptrPdt), ptrData(_ptr), ptrVec(_ptrVec) {}
+    ) : ptrData(_ptr), ptrVec(_ptrVec), origin(_ptrPdt) {}
     ~ActionGotoTable() {}
-    bool build() ;
+    bool build();
+    void displayConflict(const int fromId, Term* ptrNextTerm, const Action& act );
 };
 
 #endif // ACTION_H_INCLUDED

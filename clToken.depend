@@ -7,7 +7,7 @@
 1435897251 source:e:\document\desktop\compiler2015\cltoken\syntaxtree.cpp
 	"syntaxTree.h"
 
-1435896209 e:\document\desktop\compiler2015\cltoken\syntaxtree.h
+1435938170 e:\document\desktop\compiler2015\cltoken\syntaxtree.h
 	"stdafx.h"
 	"term.h"
 	"production.h"
@@ -18,12 +18,13 @@
 
 1435852184 e:\document\desktop\compiler2015\cltoken\token.h
 
-1435856391 source:e:\document\desktop\compiler2015\cltoken\main.cpp
+1435935778 source:e:\document\desktop\compiler2015\cltoken\main.cpp
 	<iostream>
 	<cstdio>
 	<cstdlib>
 	<string>
 	<fstream>
+	"parser.h"
 	"translator.h"
 
 1434675641 source:e:\document\desktop\compiler2015\cltoken\finiteautoman.cpp
@@ -45,13 +46,13 @@
 
 1435583215 e:\document\desktop\compiler2015\cltoken\syntaxconfig.h
 
-1435896884 e:\document\desktop\compiler2015\cltoken\clutils.h
+1435936857 e:\document\desktop\compiler2015\cltoken\clutils.h
 	"stdafx.h"
 
 1435817095 source:e:\document\desktop\compiler2015\cltoken\clutils.cpp
 	"clUtils.h"
 
-1435897263 e:\document\desktop\compiler2015\cltoken\parser.h
+1435937628 e:\document\desktop\compiler2015\cltoken\parser.h
 	"stdafx.h"
 	"clUtils.h"
 	"term.h"
@@ -62,10 +63,10 @@
 	"action.h"
 	"syntaxTree.h"
 
-1435856248 source:e:\document\desktop\compiler2015\cltoken\parser.cpp
+1435931015 source:e:\document\desktop\compiler2015\cltoken\parser.cpp
 	"parser.h"
 
-1435851189 e:\document\desktop\compiler2015\cltoken\term.h
+1435936939 e:\document\desktop\compiler2015\cltoken\term.h
 	"stdafx.h"
 	"production.h"
 
@@ -118,7 +119,7 @@
 	"stateExtItem.h"
 	"term.h"
 
-1435852045 e:\document\desktop\compiler2015\cltoken\action.h
+1435930196 e:\document\desktop\compiler2015\cltoken\action.h
 	"stdafx.h"
 	"term.h"
 	"stateSet.h"
@@ -128,12 +129,13 @@
 1435851852 source:e:\document\desktop\compiler2015\cltoken\stateset.cpp
 	"stateSet.h"
 
-1435852060 source:e:\document\desktop\compiler2015\cltoken\action.cpp
+1435928987 source:e:\document\desktop\compiler2015\cltoken\action.cpp
 	"action.h"
 
-1435856467 e:\document\desktop\compiler2015\cltoken\translator.h
+1435935902 e:\document\desktop\compiler2015\cltoken\translator.h
+	"stdafx.h"
 	"parser.h"
 
-1435856375 source:e:\document\desktop\compiler2015\cltoken\translator.cpp
+1435935968 source:e:\document\desktop\compiler2015\cltoken\translator.cpp
 	"translator.h"
 

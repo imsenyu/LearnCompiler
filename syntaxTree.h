@@ -24,19 +24,31 @@ public:
     void print(bool breakLine = true) const;
 };
 
+/*
+ * class SyntaxNode
+ * description: 语法树节点
+ * data:    ptrToken 该语法节点对应的输入词
+ *          ptrPdt 非叶子节点对用的规约产生式,叶子节点为NULL
+ *          ptrParent 父语法节点
+ *          child 孩子语法节点, 双向队列
+ *          hashData 存储所有属性数据( 通过重载的运算符和clUtils中的PASS和GET 可以简便地操作数据对象 )
+ *
+ * method:  ~syntaxNode delete时删除属性数据
+ *          getLex 返回获取的输入词的字符串
+ *          print 输出,可选换行,dep = 0则表示根节点, hasNext用于分支线的绘制
+ *          operator[ int ] 获取孩子节点的引用, 不存在直接throw
+ *          operator[ string ] 获取对应string的属性数据, 不存在会创建一个对NULL的引用，用于修改
+ */
 class syntaxNode {
 public:
-    static void* nullHashData;
-    Token* ptrToken; ///该语法节点对应的输入词
-    Production* ptrPdt; ///非叶子节点对用的规约产生式
-    syntaxNode* ptrParent; ///父节点
-    deque<syntaxNode*> child; ///孩子节点
-    D1Map<string,void*> hashData; ///存储所有属性数据
+    Token* ptrToken;
+    Production* ptrPdt;
+    syntaxNode* ptrParent;
+    deque<syntaxNode*> child;
+    D1Map<string,void*> hashData;
     syntaxNode(Token* _ptr, Production* _pdt = NULL) : ptrToken(_ptr), ptrPdt(_pdt), ptrParent(NULL) {}
     ~syntaxNode();
-    ///获得对应输入词的具体文本
     string getLex() const;
-    ///递归输出语法树，dep = 0则表示根节点, hasNext用于分支线的绘制
     void print(bool breakLine = true, int dep = 0, bool hasNext = false) const;
     void*& operator[](const string& key);
     syntaxNode& operator[](const int pos);

@@ -4,33 +4,26 @@
 #include <string>
 #include <fstream>
 
+#include "parser.h"
 #include "translator.h"
 
 using namespace std;
 
 int main()
 {
-
     fstream fileSyntax, fileLex;
     fileSyntax.open("cfg.4opera.txt",ios_base::in );
     fileLex.open("lex.4opera.txt", ios_base::in);
 
-    Translator parser;
+    syntaxParser parser(false);
     parser.
-        inputTerm(fileSyntax).
-        showTerm().
-        inputProduction(fileSyntax).
-        showProduction().
-        buildStateItems().
-        showStateItems().
-        buildStateSet().
-        showStateSet().
-        buildActionGotoTable().
-        showActionGotoTable().
-        inputLex(fileLex).
-        runSyntaxAnalyse().
-        showSyntaxTree().
-        syntaxDirectedTranslation().
+        ConstructLR1(fileSyntax).
+        ConstructTree(fileLex).
+        nop();
+
+    ArithmeticTranslator trans( &parser );
+    trans.
+        translate().
         nop();
 
     cout << "Hello world!" << endl;

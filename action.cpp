@@ -13,78 +13,57 @@ void Action::print(bool breakLine) const{
 
 bool ActionGotoTable::build() {
     if ( NULL == ptrData || NULL == ptrVec || NULL == origin ) return false;
-    printf("Action Goto Table\n");
-    printf("  Step, Goto\n");
+
+    ///Step & Goto
     TypeStateTable& mpStateTable = *ptrData;
     for(auto row : mpStateTable) {
-        int stateFromId = row.first;
+        int fromId = row.first;
         for(auto col : row.second) {
             Term* ptrStepTerm = col.first;
-            int stateToId = col.second;
-            if ( true == ptrStepTerm->isTerminal ) {
-                ///Step 移进
-                bool ret = table.add( stateFromId, ptrStepTerm, Action(Action::Type::Step, stateToId) );
-                if ( false == ret ) {
-                    printf("Conflict\n");
-                    table.get(stateFromId,ptrStepTerm)->print(true);
-                    printf("Step, %d\n",stateToId);
+            int toId = col.second;
+            ///Terminal True -> Step  Else Goto
+            Action newAct( ptrStepTerm->isTerminal ? Action::Type::Step : Action::Type::Goto, toId );
 
-                }
-            }
-            else {
-                bool ret = table.add( stateFromId, ptrStepTerm, Action(Action::Type::Goto, stateToId) );
-                if ( false == ret ) {
-                    printf("Conflict\n");
-                    table.get(stateFromId,ptrStepTerm)->print(true);
-                    printf("Goto, %d\n",stateToId);
-
-                }
-            }
+            bool ret = table.add( fromId, ptrStepTerm, newAct );
+            if ( false == ret )
+                displayConflict( fromId, ptrStepTerm, newAct );
         }
     }
-    ///还有一个Recur
-    printf("  Recur\n");
+
+    ///Recur
     TypeVectorStates& vecStates = *ptrVec;
     for(int fromId = 0;fromId < vecStates.size();fromId++) {
         for( auto ptrSEItem : vecStates[fromId]->collection ) {
             if ( false == ptrSEItem->hasNextSItem() ) {
-                bool ret = table.add( fromId, ptrSEItem->next, Action(Action::Type::Recur, ptrSEItem->ptrItem->ptrPdt->pId) );
-                if ( false == ret ) {
-                    printf("Conflict\n");
-                    table.get(fromId,ptrSEItem->next)->print(true);
-                    printf("Recur, %d\n",ptrSEItem->ptrItem->ptrPdt->pId);
-
-                }
+                Action newAct(Action::Type::Recur, ptrSEItem->ptrItem->ptrPdt->pId);
+                bool ret = table.add( fromId, ptrSEItem->next, newAct );
+                if ( false == ret )
+                    displayConflict( fromId, ptrSEItem->next, newAct );
             }
         }
     }
-    ///还有最后一个ACC
-    printf("  Acc");
+    ///Acc
     vector<int> vecAcc;
     StateExtItem* target = new StateExtItem( origin->vecSItems[ origin->toTerms.size() ], endTermPtr );
     target->print(true);
     for(int vId = 0; vId < vecStates.size(); vId++) {
         StateSet::StateCollection& collection = vecStates[vId]->collection;
-        if ( vId == 1 ) {
-            (*collection.begin())->print(true);
-            printf(" bool [%d]\n", *(*collection.begin()) == *target);
-
-        }
-        if ( collection.find( target ) != collection.end() ) {
+        if ( collection.find( target ) != collection.end() )
             vecAcc.push_back( vId );
-        }
     }
-    printf(" %d\n",vecAcc.size());
-    for(auto accId : vecAcc) {
-        bool ret = table.add( accId, endTermPtr, Action(Action::Type::Acc, -1), true );
-        ///可覆盖
-        if ( false == ret ) {
-            printf("Conflict\n");
-            table.get(accId, endTermPtr)->print(true);
-            printf("Acc, %d\n",-1);
 
-        }
+    Action actACC(Action::Type::Acc, -1);
+    for(auto accId : vecAcc) {
+        bool ret = table.add( accId, endTermPtr, actACC, true );
+        if ( false == ret )
+            displayConflict( accId, endTermPtr, actACC );
     }
     delete target;
     return true;
+}
+
+void ActionGotoTable::displayConflict(const int fromId, Term* ptrNextTerm, const Action& act ) {
+    printf("Conflict Boom Up!\n");
+    printf("  Exist: ");table.get(fromId, ptrNextTerm )->print(true);
+    printf("  New:   ");act.print(true);
 }

@@ -1,7 +1,5 @@
 #include "syntaxTree.h"
 
-void* syntaxNode::nullHashData = NULL;
-
 void Token::print(bool breakLine) const{
     ptrTerm->print(false);
     cout<<" "<<lexData;

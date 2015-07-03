@@ -6,6 +6,7 @@
 
 class Term;
 class Production;
+
 /*
  * class Term
  * description: 语法定义的词

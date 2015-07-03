@@ -15,6 +15,23 @@ using namespace clUtils;
 
 class syntaxParser;
 
+/*
+ * class syntaxParser
+ * description: 通用语法分析程序，完成LR1 ActionGoto表构造，语法规约，语法树生成
+ * data:    vecTerm 存储Term*指针
+ *          vecATerm 存储Production*指针
+ *          vecStates 存储项目规范簇StateSet*状态指针
+ *          mpTerm 字符串到Term*的查找映射
+ *          mpStateTable <int,Term*,int> 状态转换表
+ *          ptrAGTable ActionGoto表指针
+ *          ptrSyntaxTreeRoot 语法树根指针
+ *          vecToken 存储输入词法
+ *
+ * method:  ConstructLR1 根据输入流构造LR1文法分析的所有数据
+ *          ConstructTree 根据输入流构造语法树
+ *          solveSyntaxException 虚函数，重写特定文法的 LR规约错误处理
+ *
+ */
 class syntaxParser {
 private:
     template<class _T, class _KEY>
@@ -25,32 +42,29 @@ private:
         }
         else return NULL;
     }
+private:
+    bool _isDebug;
+    bool _isLR;
+    bool _isTree;
 public:
-    bool isDebug;
-public:
+    syntaxParser(bool _debug = true):_isDebug(_debug), ptrAGTable(NULL), ptrSyntaxTreeRoot(NULL) { }
+
+protected:
     ///所有数据存储使用vector
+    ///!!!考虑使用C++11 Move语义后引入 vector< unique_ptr<Term*> > 这个样子
     vector<Term*> vecTerm;
     vector<Production*> vecATerm;
     vector<StateSet*> vecStates;
 
     ///供数据查找
-    map<string, Term*> mpTerm; ///TermMap
-    map<string, vector<Production*>> mpATerm; ///ProductionMap
-   // map<Production*, vector<StateItem*>> mpSItems; ///存储兼查找
-    D2Map<int,Term*,int> mpStateTable;/// stateset - ATerm* 的二维查找表
-    ActionGotoTable* ptrAGTable;
-    syntaxNode* ptrSyntaxTreeRoot;
-    //map<int, map<Term*, int>> mpStateTable;/// stateset - ATerm* 的二维查找表
-    ///供标号，delete
-
-    //map<int, map<Production*
-    ///供顺序读取
-    vector<Token*> vecToken;
+    map<string, Term*> mpTerm;  ///Term查找
+    D2Map<int,Term*,int> mpStateTable;  /// StateSet的int编号的 关于Term*的转移表
+    ActionGotoTable* ptrAGTable;    ///AGTable指针
+    syntaxNode* ptrSyntaxTreeRoot;  ///语法树指针
+    vector<Token*> vecToken;    ///顺序读取
 
 
-
-    syntaxParser(bool _debug = true):isDebug(_debug), ptrAGTable(NULL), ptrSyntaxTreeRoot(NULL) { }
-    inline void nop() {}
+protected:
 
     syntaxParser& inputTerm(istream& in);
     syntaxParser& showTerm();
@@ -71,155 +85,50 @@ public:
     syntaxParser& runSyntaxAnalyse();
     syntaxParser& showSyntaxTree();
 
-    void dfs(syntaxNode* root, function<bool(syntaxNode& root, int pos)> *func) {
-        deque<syntaxNode*>& child = root->child;
-        if ( NULL == root->ptrPdt ) return;
-        int pId = root->ptrPdt->pId;
-        function<bool(syntaxNode& root, int pos)>& f = func[pId];
+    syntaxParser& destoryAll() {
 
-        f(*root, -1);
-        for(int c=0;c<child.size();c++) {
-            dfs(child[c], func);
-            f(*root, c);
+        for(auto ptrTerm : vecTerm )
+            delete ptrTerm;
+        ///为什么不在production的析构函数中重载，因为Term*,Production*,StateItem*是连一起的。
+        for(auto ptrPdt : vecATerm ) {
+            for(auto ptrSItem : ptrPdt->vecSItems )
+                delete ptrSItem;
+            delete ptrPdt;
         }
+        ///collection中的被重载delete了
+        for(auto ptrState : vecStates )
+            delete ptrState;
+        if ( NULL != ptrAGTable ) {
+            delete ptrAGTable;
+            ptrAGTable = NULL;
+        }
+        if ( NULL != ptrSyntaxTreeRoot ) {
+            delete ptrSyntaxTreeRoot;
+            ptrSyntaxTreeRoot = NULL;
+        }
+        for(auto ptrToken : vecToken)
+            delete ptrToken;
 
-    }
+        _isLR = false;
+        _isTree = false;
 
-    int getLineNum(bool start = false, bool _plus = true) {
-        static int line = 1;
-        if ( true == start ) line = 1;
-        if ( _plus ) return line++;
-        else return line;
-    }
-
-    int getNewTmp(bool start = false) {
-        static int cnt = 1;
-        if ( true == start ) cnt = 1;
-        return cnt++;
-    }
-
-    ///虚函数扩展，可自行定义，然后根据自行定义执行完整的翻译
-    virtual syntaxParser& syntaxDirectedTranslation() {
-        ///根据数组中每个函数的定义
-        /*
-_S 1 S
-S 1 E
-E 1 T
-E 3 E + T
-T 1 P
-T 3 T * P
-P 1 NUM
-P 3 ( E )
-         */
-        const string strValue("value"), strPlace("place");
-        function<bool(syntaxNode& root, int pos)> transFuncArr[] = {
-            /* 0 _S->S */
-            [&](syntaxNode& root, int pos){ /*do nothing*/ return true; },
-            /* 1 S-> E */
-            [&](syntaxNode& root, int pos){
-                switch(pos) {
-                    case -1: {
-                        root["place"] = new int( getNewTmp() );
-                    } break;
-                    case 0: {
-                        PASS<int>( root["value"], root[0]["value"] );
-                        printf("L-%d\t", getLineNum());
-                        printf("t%d = t%d\n", GET<int>( root["place"] ), GET<int>( root[0]["place"] )  );
-                        printf("Need t%d = %d\n", GET<int>( root["place"] ), GET<int>( root["value"] ) );
-                    } break;
-                }
-                return true;
-            },
-            /* 2 E-> T */
-            [&](syntaxNode& root, int pos){
-                switch(pos) {
-                    case -1:  break;
-                    case 0: {
-                        PASS<int>( root["value"], root[0]["value"] );
-                        PASS<int>( root["place"], root[0]["place"] );
-                    } break;
-                }
-                return true;
-            },
-            /* 3 E-> E + T */
-            [&](syntaxNode& root, int pos){
-                switch(pos) {
-                    case -1: {
-                        PASS<int>( root["place"], new int(getNewTmp()) );
-                    } break;
-                    case 1: break;
-                    case 0: break;
-                    case 2: {
-                        PASS<int>( root["value"], new int(  GET<int>( root[0]["value"] ) + GET<int>( root[2]["value"] ) ) );
-                        printf("L-%d\t",getLineNum());
-                        printf("t%d = t%d + t%d\n", GET<int>(root["place"]), GET<int>(root[0]["place"]), GET<int>(root[2]["place"]));
-                    } break;
-                }
-                return true;
-            },
-            /* 4 T-> P */
-            [&](syntaxNode& root, int pos){
-                switch(pos) {
-                    case -1: break;
-                    case 0: {
-                        PASS<int>( root["value"], root[0]["value"] );
-                        PASS<int>( root["place"], root[0]["value"] );
-                    } break;
-                }
-                return true;
-            },
-            /* 5 T-> T * P */
-            [&](syntaxNode& root, int pos){
-                switch(pos) {
-                    case -1: {
-                        PASS<int>( root["place"], new int( getNewTmp() ) );
-                    } break;
-                    case 1: break;
-                    case 0: break;
-                    case 2: {
-                        PASS<int>( root["value"], new int(  GET<int>( root[0]["value"] ) * GET<int>( root[2]["value"] ) ) );
-                        printf("L-%d\t",getLineNum());
-                        printf("t%d = t%d * t%d\n", GET<int>(root["place"]), GET<int>(root[0]["place"]), GET<int>(root[2]["place"]));
-                    } break;
-                }
-                return true;
-            },
-            /* 6 P-> NUM */
-            [&](syntaxNode& root, int pos){
-                switch(pos) {
-                    case -1: {
-                        PASS<int>( root["place"], new int( getNewTmp() ) );
-                    } break;
-                    case 0: {
-                        PASS<int>( root["value"], new int( clUtils::atoi( root[0].getLex() ) ) );
-                        printf("L-%d\t", getLineNum());
-                        printf("t%d = [%d]\n", GET<int>(root["place"]), GET<int>(root["value"]));
-                    } break;
-                }
-                return true;
-            },
-            /* 7 P-> ( E ) */
-            [&](syntaxNode& root, int pos){
-                switch(pos) {
-                    case -1: break;
-                    case 0: case 2: break;
-                    case 1: {
-                        PASS<int>( root["value"], root[1]["value"] );
-                        PASS<int>( root["place"], root[1]["place"] );
-                    } break;
-                }
-                return true;
-            },
-        };
-
-        ///准备怎么制导呢？
-
-        dfs(ptrSyntaxTreeRoot, transFuncArr);
-        printf("\n");
         return *this;
     }
 
-
+public:
+    inline void nop() {}
+    syntaxParser& ConstructLR1(istream& grammarIn);
+    syntaxParser& ConstructTree(istream& lexIn);
+    virtual bool solveSyntaxException(stack<int>& stkState, stack<syntaxNode*>& stkSyntaxNode, int& vTokenCnt) { return false; }
+    syntaxNode* getSyntaxTree() const{
+        return _isTree ? ptrSyntaxTreeRoot : NULL;
+    }
+    vector<const Production*> getProduction() const {
+        vector<const Production*> ret;
+        for(auto ptrPdt : vecATerm)
+            ret.push_back(ptrPdt);
+        return ret;
+    }
     //syntaxParse* buildStateTable
 };
 

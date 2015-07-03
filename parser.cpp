@@ -66,11 +66,7 @@ syntaxParser& syntaxParser::inputProduction(istream& in) {
         }
 
         vecATerm.push_back(addPtr);
-        if ( mpATerm.find( startNode ) == mpATerm.end() ) {
-            mpATerm.insert( make_pair(startNode, vector<Production*>() ) );
-        }
         mpTerm.find(startNode)->second->vecPdtPtrs.push_back( addPtr );
-        mpATerm.find(startNode)->second.push_back( addPtr );
     }
     return *this;
 }
@@ -83,13 +79,13 @@ syntaxParser& syntaxParser::showProduction() {
  * strname
  *     strname => ...
  */
-    if (!isDebug) return *this;
-    printf("Production(%d), TermStart(%d) Output at line %d:\n",vecATerm.size(), mpATerm.size(), __LINE__);
+    if (!_isDebug) return *this;
+    printf("Production(%d) Output at line %d:\n",vecATerm.size(), __LINE__);
 
-    for(auto iter : mpATerm) {
+    for(auto iter : mpTerm) {
         const string& startNode = iter.first;
         cout<<"["<<startNode<<"]"<<endl;
-        vector<Production*>& vecPdts = iter.second;
+        vector<Production*>& vecPdts = iter.second->vecPdtPtrs;
         for( auto ptrPdt : vecPdts ) {
             printf("   ");ptrPdt->print(-1,true);
         }
@@ -110,7 +106,7 @@ syntaxParser& syntaxParser::buildStateItems() {
 }
 
 syntaxParser& syntaxParser::showStateItems() {
-    if (!isDebug) return *this;
+    if (!_isDebug) return *this;
     printf("StateItem Output at line %d:\n",__LINE__);
     for(auto iter=vecATerm.begin();iter!=vecATerm.end();iter++) {
         Production& pdt = **iter;
@@ -190,7 +186,7 @@ syntaxParser& syntaxParser::buildStateSet() {
 }
 
 syntaxParser& syntaxParser::showStateSet() {
-    if (!isDebug) return *this;
+    if (!_isDebug) return *this;
     printf("StateSet Output at line %d:\n",__LINE__);
     for(auto ptrStateSet : vecStates ) {
         ptrStateSet->print(true);
@@ -219,7 +215,7 @@ syntaxParser& syntaxParser::buildActionGotoTable() {
 }
 
 syntaxParser& syntaxParser::showActionGotoTable() {
-    if (!isDebug) return *this;
+    if (!_isDebug) return *this;
     printf("ActionGotoTable Output at line %d:\n",__LINE__);
 
     vector<Term*> termsWithEnd = vecTerm;
@@ -260,7 +256,7 @@ syntaxParser& syntaxParser::inputLex(istream& in) {
         vecToken.push_back( new Token( ptrFoundTerm, bufLex ) );
     }
     vecToken.push_back(new Token( endTermPtr, string("#") ));
-    if (!isDebug) return *this;
+    if (!_isDebug) return *this;
     for(auto ptrToken : vecToken) {
         ptrToken->print(true);
     }
@@ -282,13 +278,15 @@ syntaxParser& syntaxParser::runSyntaxAnalyse() {
         int topState = stkState.top();
         Token* nextToken = vecToken[ vTokenCnt ];
 
-        printf("topState=%d, vTokenCnt = %d\n",topState, vTokenCnt);
-        printf("  ");nextToken->ptrTerm->print(false);
+        printf("topState = %d, vTokenCnt = %d\n",topState, vTokenCnt);
+        printf("  ");nextToken->ptrTerm->print(true);
         Action* curAction = table.get(topState, nextToken->ptrTerm);
         if ( NULL == curAction ) {
-            ///目前按照直接吃掉一个处理
-            ///跳转到错误处理程序，使用虚函数 返true则该错误处理掉了，false失败，直接退出
-            printf("Error at topState=%d vTokenCnt = %d\n",topState,vTokenCnt);
+            ///true 代表解决成功, false 代表解决失败 throw
+            if ( false == solveSyntaxException(stkState, stkSyntaxNode, vTokenCnt) ) {
+                printf("\nSyntax Error at topState=%d vTokenCnt = %d\n", topState,vTokenCnt);
+                throw "Error Can't be solved";
+            }
             vTokenCnt++;
             continue;
         }
@@ -302,12 +300,12 @@ syntaxParser& syntaxParser::runSyntaxAnalyse() {
             case Action::Type::Recur: {
                     ///使用 Production[j] 规约
                     Production* ptrPdt = vecATerm[curAction->toId];
-                    ptrPdt->print(-1,true);
+                    printf("  ");ptrPdt->print(-1,true);
                     for(int i=0;i<ptrPdt->toTerms.size();i++)
                         stkState.pop();
                     topState = stkState.top();
 
-                    printf("  StatePop: %d\n",topState);
+                    printf("  StatePoped: %d\n",topState);
 
                     curAction = table.get( topState, ptrPdt->ptrTerm );
                     if ( NULL == curAction || curAction->type != Action::Type::Goto ) {
@@ -349,6 +347,40 @@ syntaxParser& syntaxParser::runSyntaxAnalyse() {
 }
 
 syntaxParser& syntaxParser::showSyntaxTree() {
+    if ( !_isDebug ) return *this;
     ptrSyntaxTreeRoot->print(true);
+    return *this;
+}
+
+syntaxParser& syntaxParser::ConstructLR1(istream& grammarIn) {
+
+    destoryAll().
+    inputTerm(grammarIn).
+    showTerm().
+    inputProduction(grammarIn).
+    showProduction().
+    buildStateItems().
+    showStateItems().
+    buildStateSet().
+    showStateSet().
+    buildActionGotoTable().
+    showActionGotoTable().
+    nop();
+
+    _isLR = true;
+
+    return *this;
+}
+
+syntaxParser& syntaxParser::ConstructTree(istream& lexIn) {
+    if ( false == _isLR ) return *this;
+
+    inputLex(lexIn).
+    runSyntaxAnalyse().
+    showSyntaxTree().
+    nop();
+
+    _isTree = true;
+
     return *this;
 }
