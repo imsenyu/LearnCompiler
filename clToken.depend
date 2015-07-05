@@ -18,7 +18,7 @@
 
 1435852184 e:\document\desktop\compiler2015\cltoken\token.h
 
-1435940255 source:e:\document\desktop\compiler2015\cltoken\main.cpp
+1436064820 source:e:\document\desktop\compiler2015\cltoken\main.cpp
 	<iostream>
 	<cstdio>
 	<cstdlib>
@@ -26,6 +26,7 @@
 	<fstream>
 	"parser.h"
 	"translator.h"
+	"json/json.h"
 
 1434675641 source:e:\document\desktop\compiler2015\cltoken\finiteautoman.cpp
 	"finiteAutoman.h"
@@ -63,8 +64,9 @@
 	"action.h"
 	"syntaxTree.h"
 
-1435939636 source:e:\document\desktop\compiler2015\cltoken\parser.cpp
+1435988477 source:e:\document\desktop\compiler2015\cltoken\parser.cpp
 	"parser.h"
+	"syntaxTree.h"
 	<iostream>
 
 1435936939 e:\document\desktop\compiler2015\cltoken\term.h
@@ -81,7 +83,7 @@
 	"term.h"
 	"production.h"
 
-1435851287 e:\document\desktop\compiler2015\cltoken\stdafx.h
+1436028125 e:\document\desktop\compiler2015\cltoken\stdafx.h
 	<iostream>
 	<cstdio>
 	<cstdlib>
@@ -96,6 +98,7 @@
 	<functional>
 	<fstream>
 	<cassert>
+	<memory>
 
 1435851261 source:e:\document\desktop\compiler2015\cltoken\production.cpp
 	"production.h"
@@ -137,6 +140,239 @@
 	"stdafx.h"
 	"parser.h"
 
-1435939121 source:e:\document\desktop\compiler2015\cltoken\translator.cpp
+1435998194 source:e:\document\desktop\compiler2015\cltoken\translator.cpp
+	"translator.h"
+
+1268379095 e:\document\desktop\compiler2015\cltoken\json\json.h
+	"autolink.h"
+	"value.h"
+	"reader.h"
+	"writer.h"
+	"features.h"
+
+1268379095 e:\document\desktop\compiler2015\cltoken\json\autolink.h
+	"config.h"
+	<cpptl/cpptl_autolink.h>
+	"autolink.h"
+
+1268379095 e:\document\desktop\compiler2015\cltoken\json\config.h
+	<cpptl/config.h>
+
+1268379095 e:\document\desktop\compiler2015\cltoken\json\value.h
+	"forwards.h"
+	<string>
+	<vector>
+	<map>
+	<cpptl/smallmap.h>
+	<cpptl/forwards.h>
+
+1268379095 e:\document\desktop\compiler2015\cltoken\json\forwards.h
+	"config.h"
+
+1268379095 e:\document\desktop\compiler2015\cltoken\json\reader.h
+	"features.h"
+	"value.h"
+	<deque>
+	<stack>
+	<string>
+	<iostream>
+
+1268379095 e:\document\desktop\compiler2015\cltoken\json\features.h
+	"forwards.h"
+
+1268379095 e:\document\desktop\compiler2015\cltoken\json\writer.h
+	"value.h"
+	<vector>
+	<string>
+	<iostream>
+
+1436060074 source:e:\document\desktop\compiler2015\cltoken\json\json_reader.cpp
+	"reader.h"
+	"value.h"
+	<utility>
+	<cstdio>
+	<cassert>
+	<cstring>
+	<iostream>
+	<stdexcept>
+
+1436060082 source:e:\document\desktop\compiler2015\cltoken\json\json_value.cpp
+	<iostream>
+	"value.h"
+	"writer.h"
+	<utility>
+	<stdexcept>
+	<cstring>
+	<cassert>
+	<cpptl/conststring.h>
+	<cstddef>
+	"json_batchallocator.h"
+	"json_internalarray.inl"
+	"json_internalmap.inl"
+	"json_valueiterator.inl"
+
+1268379095 e:\document\desktop\compiler2015\cltoken\json\json_batchallocator.h
+	<stdlib.h>
+	<assert.h>
+
+1268379095 e:\document\desktop\compiler2015\cltoken\json\json_internalarray.inl
+
+1268379095 e:\document\desktop\compiler2015\cltoken\json\json_internalmap.inl
+
+1268379095 e:\document\desktop\compiler2015\cltoken\json\json_valueiterator.inl
+
+1436060089 source:e:\document\desktop\compiler2015\cltoken\json\json_writer.cpp
+	"writer.h"
+	<utility>
+	<assert.h>
+	<stdio.h>
+	<string.h>
+	<iostream>
+	<sstream>
+	<iomanip>
+
+1435939098 e:\document\desktop\compiler2015\cltoken\inc\parser.h
+	"stdafx.h"
+	"clUtils.h"
+	"term.h"
+	"production.h"
+	"stateItem.h"
+	"stateExtItem.h"
+	"stateSet.h"
+	"action.h"
+	"syntaxTree.h"
+
+1436028125 e:\document\desktop\compiler2015\cltoken\inc\stdafx.h
+	<iostream>
+	<cstdio>
+	<cstdlib>
+	<cstring>
+	<string>
+	<vector>
+	<deque>
+	<set>
+	<stack>
+	<map>
+	<algorithm>
+	<functional>
+	<fstream>
+	<cassert>
+	<memory>
+
+1435940224 e:\document\desktop\compiler2015\cltoken\inc\clutils.h
+	"stdafx.h"
+
+1435936939 e:\document\desktop\compiler2015\cltoken\inc\term.h
+	"stdafx.h"
+	"production.h"
+
+1435851213 e:\document\desktop\compiler2015\cltoken\inc\production.h
+	"stdafx.h"
+	"term.h"
+	"stateItem.h"
+
+1435851208 e:\document\desktop\compiler2015\cltoken\inc\stateitem.h
+	"stdafx.h"
+	"term.h"
+	"production.h"
+
+1435851537 e:\document\desktop\compiler2015\cltoken\inc\stateextitem.h
+	"stdafx.h"
+	"stateItem.h"
+	"term.h"
+
+1435851803 e:\document\desktop\compiler2015\cltoken\inc\stateset.h
+	"stdafx.h"
+	"stateExtItem.h"
+	"term.h"
+
+1435930196 e:\document\desktop\compiler2015\cltoken\inc\action.h
+	"stdafx.h"
+	"term.h"
+	"stateSet.h"
+	"clUtils.h"
+	"production.h"
+
+1435938170 e:\document\desktop\compiler2015\cltoken\inc\syntaxtree.h
+	"stdafx.h"
+	"term.h"
+	"production.h"
+	"clUtils.h"
+
+1435939340 e:\document\desktop\compiler2015\cltoken\inc\translator.h
+	"stdafx.h"
+	"parser.h"
+
+1268379095 e:\document\desktop\compiler2015\cltoken\inc\json\json.h
+	"autolink.h"
+	"value.h"
+	"reader.h"
+	"writer.h"
+	"features.h"
+
+1268379095 e:\document\desktop\compiler2015\cltoken\inc\json\autolink.h
+	"config.h"
+	<cpptl/cpptl_autolink.h>
+	"autolink.h"
+
+1268379095 e:\document\desktop\compiler2015\cltoken\inc\json\config.h
+	<cpptl/config.h>
+
+1268379095 e:\document\desktop\compiler2015\cltoken\inc\json\value.h
+	"forwards.h"
+	<string>
+	<vector>
+	<map>
+	<cpptl/smallmap.h>
+	<cpptl/forwards.h>
+
+1268379095 e:\document\desktop\compiler2015\cltoken\inc\json\forwards.h
+	"config.h"
+
+1268379095 e:\document\desktop\compiler2015\cltoken\inc\json\reader.h
+	"features.h"
+	"value.h"
+	<deque>
+	<stack>
+	<string>
+	<iostream>
+
+1268379095 e:\document\desktop\compiler2015\cltoken\inc\json\features.h
+	"forwards.h"
+
+1268379095 e:\document\desktop\compiler2015\cltoken\inc\json\writer.h
+	"value.h"
+	<vector>
+	<string>
+	<iostream>
+
+1436064488 source:e:\document\desktop\compiler2015\cltoken\src\action.cpp
+	"action.h"
+
+1436064850 source:e:\document\desktop\compiler2015\cltoken\src\parser.cpp
+	"parser.h"
+	"syntaxTree.h"
+	<iostream>
+
+1435851261 source:e:\document\desktop\compiler2015\cltoken\src\production.cpp
+	"production.h"
+
+1435851558 source:e:\document\desktop\compiler2015\cltoken\src\stateextitem.cpp
+	"stateExtItem.h"
+
+1435850899 source:e:\document\desktop\compiler2015\cltoken\src\stateitem.cpp
+	"stateItem.h"
+
+1435851852 source:e:\document\desktop\compiler2015\cltoken\src\stateset.cpp
+	"stateSet.h"
+
+1435937778 source:e:\document\desktop\compiler2015\cltoken\src\syntaxtree.cpp
+	"syntaxTree.h"
+
+1435851064 source:e:\document\desktop\compiler2015\cltoken\src\term.cpp
+	"term.h"
+	"iostream"
+
+1435998194 source:e:\document\desktop\compiler2015\cltoken\src\translator.cpp
 	"translator.h"
 

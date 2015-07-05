@@ -1,5 +1,8 @@
 #include "parser.h"
+#include "syntaxTree.h"
 #include <iostream>
+using namespace std;
+
 syntaxParser& syntaxParser::inputTerm(istream& in) {
 /*
  * 先读取个数，然后读取id str isTerminal, 加入到 mpTerm中
@@ -349,6 +352,54 @@ syntaxParser& syntaxParser::runSyntaxAnalyse() {
 syntaxParser& syntaxParser::showSyntaxTree() {
     if ( !_isDebug ) return *this;
     ptrSyntaxTreeRoot->print(true);
+
+    fstream fileTreeGV;
+    fileTreeGV.open("./test/tree.gv",ios_base::out);
+
+    fileTreeGV<<"digraph g {"<<endl;
+	fileTreeGV<<"nodesep = .05;"<<endl;
+	fileTreeGV<<"node[shape = record, width = .1, height = .1];"<<endl;
+
+    function<bool(syntaxNode* root)> dfs1 = [&](syntaxNode* root)->bool {
+        if ( NULL == root ) return false;
+        if ( NULL == root->ptrPdt ) {
+            //printf("node%x[label = \"", root);
+            fileTreeGV<<"node"<<root<<"[label = \"";
+            string & cut = root->ptrToken->ptrTerm->tName;
+            if ( cut == string("{") || cut == string("}") )
+                fileTreeGV<<"\\";
+            fileTreeGV<<root->ptrToken->ptrTerm->tName<<" ";
+            if ( root->ptrToken->lexData != string("_") ) {
+                fileTreeGV<<":"<<root->ptrToken->lexData;
+            }
+          //  cout<<root->ptrToken->lexData;
+            fileTreeGV<<"\"];"<<endl;
+        }
+        else {
+            fileTreeGV<<"node"<<root<<"[label = \"";
+            fileTreeGV<<root->ptrPdt->ptrTerm->tName;
+
+            fileTreeGV<<"\"];"<<endl;
+        }
+        for( auto ptrChild : root->child ) {
+            dfs1( ptrChild );
+        }
+        return true;
+    };
+    dfs1( ptrSyntaxTreeRoot );
+    fileTreeGV<<endl;
+    function<bool(syntaxNode* root)> dfs2 = [&](syntaxNode* root)->bool {
+        if ( NULL == root ) return false;
+        for( auto ptrChild : root->child ) {
+            fileTreeGV<<"node"<<root<<" -> node"<<ptrChild<<" ;"<<endl;
+        }
+        for( auto ptrChild : root->child ) {
+            dfs2( ptrChild );
+        }
+        return true;
+    };
+    dfs2( ptrSyntaxTreeRoot );
+    fileTreeGV<<endl<<"}"<<endl;
     return *this;
 }
 

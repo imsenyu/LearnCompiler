@@ -40,8 +40,8 @@ Translator& Translator::translate() {
     if ( NULL == ptrParser || false == ptrParser->getIsTree() ) return *this;
     vecTransFunc = getTransFunc();
     auto vecPdt = ptrParser->getProduction();
-    if ( vecPdt.size() > vecTransFunc.size() ) {
-        printf("Number of Translate Functions is smaller than %d\n", vecPdt.size());
+    if ( vecPdt.size() != vecTransFunc.size() ) {
+        printf("Number of Translate Functions (%d) is not equal to %d\n", vecTransFunc.size(), vecPdt.size());
         throw "Fewer Functions";
     }
 
@@ -165,11 +165,162 @@ P 3 ( E )
 
 
 vector<Translator::TransFuncType> CLikeTranslator::getTransFunc() {
-
+/*
+ * 文法定义
+0    _P 1 P
+1    P 4 { D CS }
+2    D 4 D int ID ;
+3    D 3 int ID ;
+4    S 9 if ( BEp ) then S else S endif
+5    S 7 if ( BEp ) then S endif
+6    S 6 while ( BEp ) do S
+7    S 4 ID = CEp ;
+8    S 3 { CS }
+9    CS 2 S CS
+10    CS 1 S
+11    BEp 1 BET
+12    BEp 3 BEp or BET
+13    BET 1 BEF
+14    BET 3 BET and BEF
+15    BEF 3 CEp relop CEp
+16    BEF 1 CEp
+17    CEp 1 CET
+18    CEp 3 CEp + CET
+19    CEp 3 CEp - CET
+20    CET 1 CEF
+21    CET 3 CET * CEF
+22    CET 3 CET / CEF
+23    CEF 1 ID
+24    CEF 1 NUM
+25    CEF 3 ( CEp )
+*/
     TransFuncType transFuncArr[] = {
+        /* 0. _P 1 P */
+        [&](syntaxNode& root, int pos){ return true;/* do nothing */ },
+        /* 1. P 4 { D CS } */
         [&](syntaxNode& root, int pos){
             return true;
         },
+        /* 2. D 4 D int ID ; */
+        [&](syntaxNode& root, int pos){
+            ///如果搞成  int ID, ID, ID 需要 往上传递"type"属性
+            ///把ID加入符号表中,并分配地址
+            switch(pos) {
+                case -1: case 0: case 2: break;
+                case 1: {
+                    PASS<int>( root["place"], new int(-1));
+                } break;
+            }
+            return true;
+        },
+        /* 3. D 3 int ID ; */
+        [&](syntaxNode& root, int pos){
+            ///把ID加入符号表中,并分配地址
+            switch(pos) {
+                case -1: case 0: case 2: break;
+                case 1: {
+                    PASS<int>( root["place"], new int(-1));
+                } break;
+            }
+            return true;
+        },
+        /* 4. S 9 if ( BEp ) then S else S endif */
+        [&](syntaxNode& root, int pos){
+            ///获取BEp的结果place，
+            ///需要做label标记
+            switch(pos) {
+                case -1: case 0: case 2: break;
+                case 1: {
+                    PASS<int>( root["place"], new int(-1));
+                } break;
+            }
+            return true;
+        },
+        /* 5. S 7 if ( BEp ) then S endif */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 6. S 6 while ( BEp ) do S */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 7. S 4 ID = CEp ; */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 8. S 3 { CS } */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 9. CS 2 S CS */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 10. CS 1 S */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 11. BEp 1 BET */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 12. BEp 3 BEp or BET */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 13. BET 1 BEF */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 14. BET 3 BET and BEF */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 15. BEF 3 CEp relop CEp */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 16. BEF 1 CEp */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 17. CEp 1 CET */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 18. CEp 3 CEp + CET */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 19. CEp 3 CEp - CET */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 20. CET 1 CEF */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 21. CET 3 CET * CEF */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 22. CET 3 CET / CEF */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 23. CEF 1 ID */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 24. CEF 1 NUM */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+        /* 25. CEF 3 ( CEp ) */
+        [&](syntaxNode& root, int pos){
+            return true;
+        },
+
     };
 
     return vector<TransFuncType>( transFuncArr, transFuncArr+sizeof(transFuncArr)/sizeof(TransFuncType) );
