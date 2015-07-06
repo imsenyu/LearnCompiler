@@ -13,6 +13,7 @@ Translator& Translator::init( syntaxParser* _newParser ) {
 void Translator::translateRecur(syntaxNode* root, vector<TransFuncType>& func) {
     if ( NULL == root ) return;
     deque<syntaxNode*>& child = root->child;
+
     if ( NULL == root->ptrPdt ) return;
     int pId = root->ptrPdt->pId;
     TransFuncType& f = func[pId];
@@ -20,7 +21,9 @@ void Translator::translateRecur(syntaxNode* root, vector<TransFuncType>& func) {
     f(*root, -1);
     for(int c=0;c<child.size();c++) {
         translateRecur(child[c], func);
+        printf("\n\nCall func[t%d p%d, %d]\n", root->tId, pId, c);
         f(*root, c);
+        printf("Call func[t%d p%d, %d] End\n\n\n", root->tId, pId, c);
     }
 }
 
@@ -44,10 +47,53 @@ Translator& Translator::translate() {
         printf("Number of Translate Functions (%d) is not equal to %d\n", vecTransFunc.size(), vecPdt.size());
         throw "Fewer Functions";
     }
-
+    printf("Do Translate.\n");
     translateRecur(ptrParser->getSyntaxTree(), vecTransFunc);
     printf("\n");
+    for(auto code : vecCodes) {
+        printf("Line %3d: ", code.lineNum);
+        cout<<code.data;
+
+    }
     return *this;
+}
+
+void Translator::Backpatch( Json::Value& p, Json::Value t ) {
+    printf("Backpatch\n");
+    cout<<" "<<p<<" "<<t;
+    assert( p.isArray() || p.isNull() );
+    Json::Value right = t;
+    while( right.isArray() ) right = right[0u];
+    for(auto ele : p) {
+        printf(" %d:", ele.asInt() );
+        cout<<right;
+        assert( vecCodes.size() > ele.asInt() );
+        //cout<<vecCodes[ ele.asInt() ].data<<endl;
+        vecCodes[ ele.asInt() ].data[3u] = right.asInt();
+    }
+}
+Json::Value Translator::Merge( Json::Value& p1, Json::Value p2 ) {
+    printf("Merge\n");
+    cout<<" "<<p1<<" "<<p2;
+    Json::Value ret;
+    assert( p1.isArray() || p1.isNull() );
+    for(auto ele : p1)
+        ret.append( ele );
+    if ( p2.isArray() || p2.isNull() ) {
+        for(auto ele : p2)
+            ret.append( ele );
+    }
+    else {
+        ret.append( p2 );
+    }
+
+    if( p1.size() && p2.size() ) {
+        assert( vecCodes.size() > p2[0u].asInt() );
+        vecCodes[ p2[0u].asInt() ][3u] = p1[ p1.size()-1 ].asInt();
+        printf(" %d %d\n", p2[0u].asInt(), p1[ p1.size()-1 ].asInt() );
+    }
+
+    return ret;
 }
 
 ///定义成虚 =0函数，必须派生。
@@ -70,13 +116,13 @@ P 3 ( E )
         [&](syntaxNode& root, int pos){
             switch(pos) {
                 case -1: {
-                    root["place"] = new int( getNewTmp() );
+                    root["place"] =  getNewTmp();
                 } break;
                 case 0: {
-                    PASS<int>( root["value"], root[0]["value"] );
+                    root["value"] = root[0]["value"];
                     printf("L-%d\t", getLineNum());
-                    printf("t%d = t%d\n", GET<int>( root["place"] ), GET<int>( root[0]["place"] )  );
-                    printf("Need t%d = %d\n", GET<int>( root["place"] ), GET<int>( root["value"] ) );
+                    printf("t%d = t%d\n", root["place"].asInt(), root[0]["place"].asInt()  );
+                    printf("Need t%d = %d\n", root["place"].asInt() , root["value"].asInt()  );
                 } break;
             }
             return true;
@@ -86,8 +132,8 @@ P 3 ( E )
             switch(pos) {
                 case -1:  break;
                 case 0: {
-                    PASS<int>( root["value"], root[0]["value"] );
-                    PASS<int>( root["place"], root[0]["place"] );
+                    root["value"] = root[0]["value"];
+                    root["place"] = root[0]["place"];
                 } break;
             }
             return true;
@@ -96,13 +142,13 @@ P 3 ( E )
         [&](syntaxNode& root, int pos){
             switch(pos) {
                 case -1: {
-                    PASS<int>( root["place"], new int(getNewTmp()) );
+                    root["place"] =  getNewTmp();
                 } break;
                 case 0: case 1: break;
                 case 2: {
-                    PASS<int>( root["value"], new int(  GET<int>( root[0]["value"] ) + GET<int>( root[2]["value"] ) ) );
+                    root["value"] = root[0]["value"].asInt() + root[2]["value"].asInt();
                     printf("L-%d\t",getLineNum());
-                    printf("t%d = t%d + t%d\n", GET<int>(root["place"]), GET<int>(root[0]["place"]), GET<int>(root[2]["place"]));
+                    printf("t%d = t%d + t%d\n", root["place"].asInt(), root[0]["place"].asInt(), root[2]["place"].asInt());
                 } break;
             }
             return true;
@@ -112,8 +158,8 @@ P 3 ( E )
             switch(pos) {
                 case -1: break;
                 case 0: {
-                    PASS<int>( root["value"], root[0]["value"] );
-                    PASS<int>( root["place"], root[0]["value"] );
+                    root["value"] = root[0]["value"];
+                    root["place"] = root[0]["value"];
                 } break;
             }
             return true;
@@ -122,13 +168,13 @@ P 3 ( E )
         [&](syntaxNode& root, int pos){
             switch(pos) {
                 case -1: {
-                    PASS<int>( root["place"], new int( getNewTmp() ) );
+                    root["place"] =  getNewTmp();
                 } break;
                 case 0: case 1: break;
                 case 2: {
-                    PASS<int>( root["value"], new int(  GET<int>( root[0]["value"] ) * GET<int>( root[2]["value"] ) ) );
+                    root["value"] = root[0]["value"].asInt() * root[2]["value"].asInt();
                     printf("L-%d\t",getLineNum());
-                    printf("t%d = t%d * t%d\n", GET<int>(root["place"]), GET<int>(root[0]["place"]), GET<int>(root[2]["place"]));
+                    printf("t%d = t%d * t%d\n", root["place"].asInt(), root[0]["place"].asInt(), root[2]["place"].asInt());
                 } break;
             }
             return true;
@@ -137,12 +183,12 @@ P 3 ( E )
         [&](syntaxNode& root, int pos){
             switch(pos) {
                 case -1: {
-                    PASS<int>( root["place"], new int( getNewTmp() ) );
+                    root["place"] = getNewTmp();
                 } break;
                 case 0: {
-                    PASS<int>( root["value"], new int( clUtils::atoi( root[0].getLex() ) ) );
+                    root["value"] = clUtils::atoi( root[0].getLex() ) ;
                     printf("L-%d\t", getLineNum());
-                    printf("t%d = [%d]\n", GET<int>(root["place"]), GET<int>(root["value"]));
+                    printf("t%d = [%d]\n", root["place"].asInt(), root["value"].asInt() );
                 } break;
             }
             return true;
@@ -152,8 +198,8 @@ P 3 ( E )
             switch(pos) {
                 case -1: case 0: case 1: break;
                 case 2: {
-                    PASS<int>( root["value"], root[1]["value"] );
-                    PASS<int>( root["place"], root[1]["place"] );
+                    root["value"] = root[1]["value"];
+                    root["place"] = root[1]["place"];
                 } break;
             }
             return true;
@@ -194,130 +240,311 @@ vector<Translator::TransFuncType> CLikeTranslator::getTransFunc() {
 24    CEF 1 NUM
 25    CEF 3 ( CEp )
 */
+    ///先制作if + bool 的 回填拉链 测试
     TransFuncType transFuncArr[] = {
         /* 0. _P 1 P */
         [&](syntaxNode& root, int pos){ return true;/* do nothing */ },
         /* 1. P 4 { D CS } */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case 2: {
+
+                } break;
+            }
             return true;
         },
         /* 2. D 4 D int ID ; */
         [&](syntaxNode& root, int pos){
             ///如果搞成  int ID, ID, ID 需要 往上传递"type"属性
             ///把ID加入符号表中,并分配地址
-            switch(pos) {
-                case -1: case 0: case 2: break;
-                case 1: {
-                    PASS<int>( root["place"], new int(-1));
-                } break;
-            }
             return true;
         },
         /* 3. D 3 int ID ; */
         [&](syntaxNode& root, int pos){
             ///把ID加入符号表中,并分配地址
-            switch(pos) {
-                case -1: case 0: case 2: break;
-                case 1: {
-                    PASS<int>( root["place"], new int(-1));
-                } break;
-            }
             return true;
         },
         /* 4. S 9 if ( BEp ) then S else S endif */
         [&](syntaxNode& root, int pos){
-            ///获取BEp的结果place，
-            ///需要做label标记
             switch(pos) {
-                case -1: case 0: case 2: break;
-                case 1: {
-                    PASS<int>( root["place"], new int(-1));
+                case -1: break;
+                case 0: case 1: break;
+                case 2: {
+                    Backpatch( root[2]["true"], Json::Value( getLineNum(false) ) );
+                    root["chain_C"] = root[2]["false"];
+                } break;
+                case 5: {
+                    int q = getLineNum(false);
+                    Emit(getLineNum(), "goto", -1, -1, -1);
+                    Backpatch(root["chain_C"], getLineNum(false));
+                    root["chain_T"] = Merge( root[5]["chain"], Json::Value(q) );
+                } break;
+                case 7: {
+                    root["chain"] = Merge( root["chain_T"], root[7]["chain"] );
                 } break;
             }
             return true;
         },
         /* 5. S 7 if ( BEp ) then S endif */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: break;
+                case 0: case 1: break;
+                case 2: {
+                    Backpatch( root[2]["true"], Json::Value( getLineNum(false) ) );
+                    root["chain_C"] = root[2]["false"];
+                } break;
+                case 5: {
+                    root["chain"] = Merge( root["chain_C"], root[5]["chain"] );
+                } break;
+            }
             return true;
         },
         /* 6. S 6 while ( BEp ) do S */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: break;
+                case 0: {
+                    root["codebegin_W"] = getLineNum(false);
+                } break;
+                case 2: {
+                    Backpatch( root[2]["true"], getLineNum(false) );
+                    root["chain_W"] = root[2]["false"];
+                    root["codebegin_W2"] = root["codebegin_W"];
+                } break;
+                case 5: {
+                    Backpatch( root[5]["chain"], root["codebegin_W2"] );
+                    Emit(getLineNum(), "goto", -1, -1, root["codebegin_W2"].asInt() );
+                    root["chain"] = root["chain_W"];
+                } break;
+            }
             return true;
         },
         /* 7. S 4 ID = CEp ; */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: case 0: case 1: break;
+                case 2: {
+                    //root["chain"].append(-2);
+                    Emit(getLineNum(), "Assign", root[2]["place"].asString(), -1, root[0].ptrToken->lexData );
+                } break;
+            }
             return true;
         },
         /* 8. S 3 { CS } */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: case 0: break;
+                case 1: {
+                    root["chain"] = root[1]["chain"];
+                } break;
+            }
             return true;
         },
         /* 9. CS 2 S CS */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case 0: {
+                    Backpatch( root[0]["chain"], getLineNum(false) );
+                } break;
+                case 1: {
+                    root["chain"] = root[1]["chain"];
+                } break;
+            }
             return true;
         },
         /* 10. CS 1 S */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case 0: {
+                    root["chain"] = root[0]["chain"];
+                } break;
+            }
             return true;
         },
         /* 11. BEp 1 BET */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: break;
+                case 0: {
+                    root["true"] = root[0]["true"];
+                    root["false"] = root[0]["false"];
+                    root["codebegin"] = root[0]["codebegin"];
+                } break;
+            }
             return true;
         },
         /* 12. BEp 3 BEp or BET */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: break;
+                case 0: case 1: break;
+                case 2: {
+                    Backpatch( root[0]["false"], root[2]["codebegin"] );
+
+                    root["codebegin"] = root[0]["codebegin"];
+                    root["false"] = root[2]["false"];
+                    root["true"] = Merge( root[0]["true"], root[2]["true"] );
+                    cout<<"TRUE:"<<root["true"]<<"FALSE:"<<root["false"]<<"CODEBEGIN:"<<root["codebegin"];
+                } break;
+            }
             return true;
         },
         /* 13. BET 1 BEF */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: break;
+                case 0: {
+                    root["true"] = root[0]["true"];
+                    root["false"] = root[0]["false"];
+                    root["codebegin"] = root[0]["codebegin"];
+                } break;
+            }
             return true;
         },
         /* 14. BET 3 BET and BEF */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: case 0: case 1: break;
+                case 2: {
+                    Backpatch( root[0]["true"], root[2]["codebegin"] );
+
+                    root["codebegin"] = root[0]["codebegin"];
+                    root["true"] = root[2]["true"];
+                    root["false"] = Merge( root[0]["false"], root[2]["false"] );
+                    cout<<"TRUE:"<<root["true"]<<"FALSE:"<<root["false"]<<"CODEBEGIN:"<<root["codebegin"];
+                } break;
+            }
             return true;
         },
         /* 15. BEF 3 CEp relop CEp */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: case 0: case 1: break;
+                case 2: {
+                    root["true"].append( getLineNum(false) );
+                    root["codebegin"].append( getLineNum(false) );
+                    root["false"].append( getLineNum(false) + 1 );
+                    Emit( getLineNum(),
+                         string("if ")+root[1].ptrToken->lexData ,
+                         root[0]["place"].asString(),
+                         root[2]["place"].asString(),
+                         -1
+                          );
+                    Emit( getLineNum(), "goto", -1, -1 , -1 );
+                } break;
+            }
             return true;
         },
         /* 16. BEF 1 CEp */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: break;
+                case 0: {
+                    root["place"] = root[0]["place"];
+                } break;
+            }
             return true;
         },
         /* 17. CEp 1 CET */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: break;
+                case 0: {
+                    root["place"] = root[0]["place"];
+                } break;
+            }
             return true;
         },
         /* 18. CEp 3 CEp + CET */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: {
+                    root["place"] = string("t") + clUtils::itoa( getNewTmp() );
+                } break;
+                case 0: {
+                    Emit( getLineNum(), "+", root[0]["place"], root[2]["place"], root["place"] );
+                } break;
+            }
             return true;
         },
         /* 19. CEp 3 CEp - CET */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: {
+                    root["place"] = string("t") + clUtils::itoa( getNewTmp() );
+                } break;
+                case 0: {
+                    Emit( getLineNum(), "-", root[0]["place"], root[2]["place"], root["place"] );
+                } break;
+            }
             return true;
         },
         /* 20. CET 1 CEF */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: break;
+                case 0: {
+                    root["place"] = root[0]["place"];
+                } break;
+            }
             return true;
         },
         /* 21. CET 3 CET * CEF */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: {
+                    root["place"] = string("t") + clUtils::itoa( getNewTmp() );
+                } break;
+                case 0: {
+                    Emit( getLineNum(), "*", root[0]["place"], root[2]["place"], root["place"] );
+                } break;
+            }
             return true;
         },
         /* 22. CET 3 CET / CEF */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: {
+                    root["place"] = string("t") + clUtils::itoa( getNewTmp() );
+                } break;
+                case 0: {
+                    Emit( getLineNum(), "/", root[0]["place"], root[2]["place"], root["place"] );
+                } break;
+            }
             return true;
         },
         /* 23. CEF 1 ID */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: break;
+                case 0: {
+                    root["place"] = root[0].ptrToken->lexData;
+                } break;
+            }
             return true;
         },
         /* 24. CEF 1 NUM */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: {
+                    root["place"] = string("t") + clUtils::itoa( getNewTmp() );
+                } break;
+                case 0: {
+                    root["value"] = root[0].ptrToken->lexData;
+                    Emit( getLineNum(), "Assign", root["value"],-1,root["place"]  );
+                } break;
+            }
             return true;
         },
         /* 25. CEF 3 ( CEp ) */
         [&](syntaxNode& root, int pos){
+            switch(pos) {
+                case -1: break;
+                case 0: {
+                    root["place"] = root[0]["place"];
+                } break;
+            }
             return true;
         },
 

@@ -350,9 +350,17 @@ syntaxParser& syntaxParser::runSyntaxAnalyse() {
 }
 
 syntaxParser& syntaxParser::showSyntaxTree() {
-    if ( !_isDebug ) return *this;
-    ptrSyntaxTreeRoot->print(true);
+    int cntTid= 0;
+    function<bool(syntaxNode*)> dfs=[&](syntaxNode* root)->bool {
+        root->tId = cntTid++;
+        for(auto ptrChild : root->child) {
+            dfs(ptrChild);
+        }
+    };
+    dfs(ptrSyntaxTreeRoot);
 
+    ptrSyntaxTreeRoot->print(true);
+   // if ( !_isDebug ) return *this;
     fstream fileTreeGV;
     fileTreeGV.open("./test/tree.gv",ios_base::out);
 

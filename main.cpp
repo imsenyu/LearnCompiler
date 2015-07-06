@@ -30,12 +30,5 @@ int main()
 
     cout << "Hello world!" << endl;
 
-    Json::Value value;
-    value["test"].append(1);
-    value["test"][1u]="333";;
-    value["place"] = 123;
-    value["place"] = "123133";
-    cout<<value.toStyledString()<<endl;
-
     return 0;
 }

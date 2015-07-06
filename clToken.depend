@@ -18,7 +18,7 @@
 
 1435852184 e:\document\desktop\compiler2015\cltoken\token.h
 
-1436064820 source:e:\document\desktop\compiler2015\cltoken\main.cpp
+1436162575 source:e:\document\desktop\compiler2015\cltoken\main.cpp
 	<iostream>
 	<cstdio>
 	<cstdlib>
@@ -259,8 +259,9 @@
 	<cassert>
 	<memory>
 
-1435940224 e:\document\desktop\compiler2015\cltoken\inc\clutils.h
+1436165403 e:\document\desktop\compiler2015\cltoken\inc\clutils.h
 	"stdafx.h"
+	"json/json.h"
 
 1435936939 e:\document\desktop\compiler2015\cltoken\inc\term.h
 	"stdafx.h"
@@ -293,15 +294,17 @@
 	"clUtils.h"
 	"production.h"
 
-1435938170 e:\document\desktop\compiler2015\cltoken\inc\syntaxtree.h
+1436160373 e:\document\desktop\compiler2015\cltoken\inc\syntaxtree.h
 	"stdafx.h"
 	"term.h"
 	"production.h"
 	"clUtils.h"
+	"json/json.h"
 
-1435939340 e:\document\desktop\compiler2015\cltoken\inc\translator.h
+1436160769 e:\document\desktop\compiler2015\cltoken\inc\translator.h
 	"stdafx.h"
 	"parser.h"
+	"json/json.h"
 
 1268379095 e:\document\desktop\compiler2015\cltoken\inc\json\json.h
 	"autolink.h"
@@ -349,7 +352,7 @@
 1436064488 source:e:\document\desktop\compiler2015\cltoken\src\action.cpp
 	"action.h"
 
-1436064850 source:e:\document\desktop\compiler2015\cltoken\src\parser.cpp
+1436165139 source:e:\document\desktop\compiler2015\cltoken\src\parser.cpp
 	"parser.h"
 	"syntaxTree.h"
 	<iostream>
@@ -366,13 +369,18 @@
 1435851852 source:e:\document\desktop\compiler2015\cltoken\src\stateset.cpp
 	"stateSet.h"
 
-1435937778 source:e:\document\desktop\compiler2015\cltoken\src\syntaxtree.cpp
+1436160605 source:e:\document\desktop\compiler2015\cltoken\src\syntaxtree.cpp
 	"syntaxTree.h"
 
 1435851064 source:e:\document\desktop\compiler2015\cltoken\src\term.cpp
 	"term.h"
 	"iostream"
 
-1435998194 source:e:\document\desktop\compiler2015\cltoken\src\translator.cpp
+1436166412 source:e:\document\desktop\compiler2015\cltoken\src\translator.cpp
 	"translator.h"
+
+1436165935 source:e:\document\desktop\compiler2015\cltoken\src\clutils.cpp
+	"clUtils.h"
+	<string>
+	<stack>
 

@@ -12,8 +12,14 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
+					<Add option="-std=c++11" />
 					<Add option="-g" />
+					<Add directory="./inc" />
 				</Compiler>
+				<Linker>
+					<Add library="./lib/lib_json.a" />
+					<Add directory="./lib" />
+				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="bin/Release/clToken" prefix_auto="1" extension_auto="1" />
@@ -22,9 +28,13 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O2" />
+					<Add option="-std=c++11" />
+					<Add directory="./inc" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add library="./lib/lib_json.a" />
+					<Add directory="./lib" />
 				</Linker>
 			</Target>
 		</Build>
@@ -32,18 +42,46 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
-		<Unit filename="closure.cpp" />
-		<Unit filename="closure.h" />
-		<Unit filename="finiteAutoman.cpp" />
-		<Unit filename="finiteAutoman.h" />
-		<Unit filename="inputHelper.cpp" />
-		<Unit filename="inputHelper.h" />
+		<Unit filename="inc/action.h" />
+		<Unit filename="inc/clUtils.h" />
+		<Unit filename="inc/json/autolink.h" />
+		<Unit filename="inc/json/config.h" />
+		<Unit filename="inc/json/features.h" />
+		<Unit filename="inc/json/forwards.h" />
+		<Unit filename="inc/json/json.h" />
+		<Unit filename="inc/json/json_batchallocator.h" />
+		<Unit filename="inc/json/reader.h" />
+		<Unit filename="inc/json/value.h" />
+		<Unit filename="inc/json/writer.h" />
+		<Unit filename="inc/parser.h" />
+		<Unit filename="inc/production.h" />
+		<Unit filename="inc/stateExtItem.h" />
+		<Unit filename="inc/stateItem.h" />
+		<Unit filename="inc/stateSet.h" />
+		<Unit filename="inc/stdafx.h" />
+		<Unit filename="inc/syntaxTree.h" />
+		<Unit filename="inc/term.h" />
+		<Unit filename="inc/translator.h" />
 		<Unit filename="main.cpp" />
-		<Unit filename="syntaxConfig.h" />
-		<Unit filename="syntaxTree.cpp" />
-		<Unit filename="syntaxTree.h" />
-		<Unit filename="token.cpp" />
-		<Unit filename="token.h" />
+		<Unit filename="src/action.cpp" />
+		<Unit filename="src/clUtils.cpp" />
+		<Unit filename="src/parser.cpp" />
+		<Unit filename="src/production.cpp" />
+		<Unit filename="src/stateExtItem.cpp" />
+		<Unit filename="src/stateItem.cpp" />
+		<Unit filename="src/stateSet.cpp" />
+		<Unit filename="src/syntaxTree.cpp" />
+		<Unit filename="src/term.cpp" />
+		<Unit filename="src/translator.cpp" />
+		<Unit filename="test/cfg.146.txt" />
+		<Unit filename="test/cfg.164.txt" />
+		<Unit filename="test/cfg.4opera.txt" />
+		<Unit filename="test/cfg.clike.txt" />
+		<Unit filename="test/cfg.hcb.1.txt" />
+		<Unit filename="test/lex.146.txt" />
+		<Unit filename="test/lex.164.txt" />
+		<Unit filename="test/lex.4opera.txt" />
+		<Unit filename="test/lex.clike.txt" />
 		<Extensions>
 			<code_completion />
 			<envvars />

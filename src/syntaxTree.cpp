@@ -8,9 +8,6 @@ void Token::print(bool breakLine) const{
 
 syntaxNode::~syntaxNode() {
     for(auto ptrSNode : child) {
-        for(auto item: hashData  ) {
-            delete item.second;
-        }
         delete ptrSNode;
     }
 }
@@ -31,7 +28,7 @@ void syntaxNode::print(bool breakLine, int dep, bool hasNext) const {
         ptrToken->print(false);
     else
         ptrPdt->ptrTerm->print(false);
-    printf("\n");
+    printf("(%d)\n",tId);
     int cnt = 0;
     ///遍历下一层孩子，最后一个hasNext = false, 跑最后一个之前把当前vis[dep]置false
     for(auto ptrSNode : child) {
@@ -39,12 +36,6 @@ void syntaxNode::print(bool breakLine, int dep, bool hasNext) const {
         ptrSNode->print(false, dep+1, cnt != child.size()-1);
         cnt++;
     }
-}
-
-void*& syntaxNode::operator[](const string& key) {
-    if ( NULL == hashData.get( key ) )
-        hashData.add( key, NULL );
-    return *hashData.get(key);
 }
 
 syntaxNode& syntaxNode::operator[](const int pos) {

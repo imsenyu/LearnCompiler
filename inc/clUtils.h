@@ -2,28 +2,13 @@
 #define CLUTILS_H_INCLUDED
 
 #include "stdafx.h"
+#include "json/json.h"
 
 using namespace std;
 
 namespace clUtils{
-    static int atoi(const string& str) {
-        int ret = 0;
-        for(auto ch : str) {
-            ret *= 10;
-            ret += ch-'0';
-        }
-        return ret;
-    }
-    template<typename _Ele>
-    static void PASS(void*& dest, void* src) {
-        if ( NULL != (_Ele*)dest )
-            delete (_Ele*)dest;
-        dest = (_Ele*)src;
-    }
-    template<typename _Ele>
-    static _Ele GET(void*& src) {
-        return *(_Ele*)src;
-    }
+    int atoi(const string& str);
+    string itoa(int k);
 };
 
 template<typename _Key, typename _Ele>

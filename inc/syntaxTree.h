@@ -5,6 +5,7 @@
 #include "term.h"
 #include "production.h"
 #include "clUtils.h"
+#include "json/json.h"
 
 class Term;
 class Token;
@@ -41,21 +42,24 @@ public:
  */
 class syntaxNode {
 public:
+    int tId;
     Token* ptrToken;
     Production* ptrPdt;
     syntaxNode* ptrParent;
     deque<syntaxNode*> child;
-    D1Map<string,void*> hashData;
+    Json::Value data;
     syntaxNode(Token* _ptr, Production* _pdt = NULL) : ptrToken(_ptr), ptrPdt(_pdt), ptrParent(NULL) {}
     ~syntaxNode();
     string getLex() const;
     void print(bool breakLine = true, int dep = 0, bool hasNext = false) const;
-    void*& operator[](const string& key);
     syntaxNode& operator[](const int pos);
-    template<typename _Key, typename _Ele>
-    bool add(const _Key& key, const _Ele& ele, bool _replace = false) {
-        return hashData.add(key,ele,_replace);
+    Json::Value& operator[](const string& key) {
+        return data[key];
     }
+    const Json::Value& operator[](const string& key) const {
+        return data[key];
+    }
+
 };
 
 #endif // SYNTAXTREE_H_INCLUDED
