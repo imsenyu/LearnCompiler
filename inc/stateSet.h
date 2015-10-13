@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "stateExtItem.h"
 #include "term.h"
-
+#include "clUtils.h"
 class Term;
 class StateExtItem;
 /*
@@ -30,6 +30,7 @@ public:
     ~StateSet();
     bool calcClosure();
     void print(bool breakLine = true) const;
+    string getString() const;
     bool operator()(const StateSet* a, const StateSet* b) const;
 private:
     set<Term*> calcFirstSet(vector<Term*>& after);

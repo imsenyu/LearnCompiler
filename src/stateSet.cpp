@@ -21,10 +21,17 @@ bool StateSet::calcClosure() {
 }
 
 void StateSet::print(bool breakLine) const {
-    printf("StateId(%d) :\n",sId);
+    cout<<getString();
+    breakLine && printf("\n");
+}
+
+string StateSet::getString() const {
+    string ret;
+    ret += "StateId("+ clUtils::itoa(sId) +") :\n";
     for(auto ptrSEItem : collection ) {
-        printf("  ");ptrSEItem->print(true);
+        ret += "  "+ ptrSEItem->getString() + "\n";
     }
+    return ret;
 }
 
 bool StateSet::operator()(const StateSet* a, const StateSet* b) const {

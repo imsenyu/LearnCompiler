@@ -34,6 +34,7 @@ public:
     Term* getFromTerm() const;
     StateItem* getNextSItem() const;
     void print(bool breakLine = true) const;
+    string getString() const;
 };
 
 #endif // STATEEXTITEM_H_INCLUDED

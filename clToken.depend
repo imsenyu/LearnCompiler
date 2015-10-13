@@ -18,7 +18,7 @@
 
 1435852184 e:\document\desktop\compiler2015\cltoken\token.h
 
-1436162575 source:e:\document\desktop\compiler2015\cltoken\main.cpp
+1436436960 source:e:\document\desktop\compiler2015\cltoken\main.cpp
 	<iostream>
 	<cstdio>
 	<cstdlib>
@@ -231,7 +231,7 @@
 	<sstream>
 	<iomanip>
 
-1435939098 e:\document\desktop\compiler2015\cltoken\inc\parser.h
+1436226100 e:\document\desktop\compiler2015\cltoken\inc\parser.h
 	"stdafx.h"
 	"clUtils.h"
 	"term.h"
@@ -259,35 +259,37 @@
 	<cassert>
 	<memory>
 
-1436165403 e:\document\desktop\compiler2015\cltoken\inc\clutils.h
+1436170724 e:\document\desktop\compiler2015\cltoken\inc\clutils.h
 	"stdafx.h"
 	"json/json.h"
 
-1435936939 e:\document\desktop\compiler2015\cltoken\inc\term.h
+1436189370 e:\document\desktop\compiler2015\cltoken\inc\term.h
 	"stdafx.h"
 	"production.h"
 
-1435851213 e:\document\desktop\compiler2015\cltoken\inc\production.h
+1436189880 e:\document\desktop\compiler2015\cltoken\inc\production.h
 	"stdafx.h"
 	"term.h"
 	"stateItem.h"
+	"clUtils.h"
 
-1435851208 e:\document\desktop\compiler2015\cltoken\inc\stateitem.h
+1436189676 e:\document\desktop\compiler2015\cltoken\inc\stateitem.h
 	"stdafx.h"
 	"term.h"
 	"production.h"
 
-1435851537 e:\document\desktop\compiler2015\cltoken\inc\stateextitem.h
+1436189850 e:\document\desktop\compiler2015\cltoken\inc\stateextitem.h
 	"stdafx.h"
 	"stateItem.h"
 	"term.h"
 
-1435851803 e:\document\desktop\compiler2015\cltoken\inc\stateset.h
+1436189938 e:\document\desktop\compiler2015\cltoken\inc\stateset.h
 	"stdafx.h"
 	"stateExtItem.h"
 	"term.h"
+	"clUtils.h"
 
-1435930196 e:\document\desktop\compiler2015\cltoken\inc\action.h
+1436191399 e:\document\desktop\compiler2015\cltoken\inc\action.h
 	"stdafx.h"
 	"term.h"
 	"stateSet.h"
@@ -301,7 +303,7 @@
 	"clUtils.h"
 	"json/json.h"
 
-1436160769 e:\document\desktop\compiler2015\cltoken\inc\translator.h
+1436226230 e:\document\desktop\compiler2015\cltoken\inc\translator.h
 	"stdafx.h"
 	"parser.h"
 	"json/json.h"
@@ -349,37 +351,37 @@
 	<string>
 	<iostream>
 
-1436064488 source:e:\document\desktop\compiler2015\cltoken\src\action.cpp
+1436191470 source:e:\document\desktop\compiler2015\cltoken\src\action.cpp
 	"action.h"
 
-1436165139 source:e:\document\desktop\compiler2015\cltoken\src\parser.cpp
+1436289254 source:e:\document\desktop\compiler2015\cltoken\src\parser.cpp
 	"parser.h"
 	"syntaxTree.h"
 	<iostream>
 
-1435851261 source:e:\document\desktop\compiler2015\cltoken\src\production.cpp
+1436189866 source:e:\document\desktop\compiler2015\cltoken\src\production.cpp
 	"production.h"
 
-1435851558 source:e:\document\desktop\compiler2015\cltoken\src\stateextitem.cpp
+1436189904 source:e:\document\desktop\compiler2015\cltoken\src\stateextitem.cpp
 	"stateExtItem.h"
 
-1435850899 source:e:\document\desktop\compiler2015\cltoken\src\stateitem.cpp
+1436189913 source:e:\document\desktop\compiler2015\cltoken\src\stateitem.cpp
 	"stateItem.h"
 
-1435851852 source:e:\document\desktop\compiler2015\cltoken\src\stateset.cpp
+1436287792 source:e:\document\desktop\compiler2015\cltoken\src\stateset.cpp
 	"stateSet.h"
 
 1436160605 source:e:\document\desktop\compiler2015\cltoken\src\syntaxtree.cpp
 	"syntaxTree.h"
 
-1435851064 source:e:\document\desktop\compiler2015\cltoken\src\term.cpp
+1436189532 source:e:\document\desktop\compiler2015\cltoken\src\term.cpp
 	"term.h"
 	"iostream"
 
-1436166412 source:e:\document\desktop\compiler2015\cltoken\src\translator.cpp
+1436196523 source:e:\document\desktop\compiler2015\cltoken\src\translator.cpp
 	"translator.h"
 
-1436165935 source:e:\document\desktop\compiler2015\cltoken\src\clutils.cpp
+1436166581 source:e:\document\desktop\compiler2015\cltoken\src\clutils.cpp
 	"clUtils.h"
 	<string>
 	<stack>

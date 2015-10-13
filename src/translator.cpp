@@ -5,6 +5,8 @@ Translator& Translator::init( syntaxParser* _newParser ) {
         delete ptrParser;
         ptrParser = _newParser;
     }
+    mpSymbol.clear();
+    vecCodes.clear();
     numLine = 0;
     numTmp = 0;
     return *this;
@@ -21,9 +23,9 @@ void Translator::translateRecur(syntaxNode* root, vector<TransFuncType>& func) {
     f(*root, -1);
     for(int c=0;c<child.size();c++) {
         translateRecur(child[c], func);
-        printf("\n\nCall func[t%d p%d, %d]\n", root->tId, pId, c);
+        //printf("\n\nCall func[t%d p%d, %d]\n", root->tId, pId, c);
         f(*root, c);
-        printf("Call func[t%d p%d, %d] End\n\n\n", root->tId, pId, c);
+        //printf("Call func[t%d p%d, %d] End\n\n\n", root->tId, pId, c);
     }
 }
 
@@ -48,33 +50,38 @@ Translator& Translator::translate() {
         throw "Fewer Functions";
     }
     printf("Do Translate.\n");
-    translateRecur(ptrParser->getSyntaxTree(), vecTransFunc);
-    printf("\n");
+    try{
+        translateRecur(ptrParser->getSyntaxTree(), vecTransFunc);
+    }
+    catch(...){
+        vecError.push_back( "Translate Error" );
+        printf("Translate Error\n");
+    }
+    printf("\nCode:\n");
     for(auto code : vecCodes) {
         printf("Line %3d: ", code.lineNum);
         cout<<code.data;
 
     }
+    printf("Err:%d\n", vecError.size());
+    for(auto err : vecError) {
+        cout<<err<<endl;
+    }
     return *this;
 }
 
 void Translator::Backpatch( Json::Value& p, Json::Value t ) {
-    printf("Backpatch\n");
-    cout<<" "<<p<<" "<<t;
+
     assert( p.isArray() || p.isNull() );
     Json::Value right = t;
     while( right.isArray() ) right = right[0u];
     for(auto ele : p) {
-        printf(" %d:", ele.asInt() );
-        cout<<right;
         assert( vecCodes.size() > ele.asInt() );
-        //cout<<vecCodes[ ele.asInt() ].data<<endl;
         vecCodes[ ele.asInt() ].data[3u] = right.asInt();
     }
 }
 Json::Value Translator::Merge( Json::Value& p1, Json::Value p2 ) {
-    printf("Merge\n");
-    cout<<" "<<p1<<" "<<p2;
+
     Json::Value ret;
     assert( p1.isArray() || p1.isNull() );
     for(auto ele : p1)
@@ -90,7 +97,6 @@ Json::Value Translator::Merge( Json::Value& p1, Json::Value p2 ) {
     if( p1.size() && p2.size() ) {
         assert( vecCodes.size() > p2[0u].asInt() );
         vecCodes[ p2[0u].asInt() ][3u] = p1[ p1.size()-1 ].asInt();
-        printf(" %d %d\n", p2[0u].asInt(), p1[ p1.size()-1 ].asInt() );
     }
 
     return ret;
@@ -248,20 +254,55 @@ vector<Translator::TransFuncType> CLikeTranslator::getTransFunc() {
         [&](syntaxNode& root, int pos){
             switch(pos) {
                 case 2: {
-
+                    //root["chain"] = root[2]["chain"];
+                    Backpatch( root[2]["chain"], getLineNum(false) );
+                    Emit( getLineNum(), "halt", -1, -1, -1 );
                 } break;
             }
             return true;
         },
         /* 2. D 4 D int ID ; */
         [&](syntaxNode& root, int pos){
-            ///如果搞成  int ID, ID, ID 需要 往上传递"type"属性
             ///把ID加入符号表中,并分配地址
+            switch(pos) {
+                case 1: {
+                    root[2]["type"] = "int";
+                } break;
+                case 2: {
+                    root[2]["name"] = root[2].ptrToken->lexData;
+
+                    if ( mpSymbol.find(root[2]["name"].asString()) == mpSymbol.end() ) {
+                        Emit(getLineNum(), "SYMBOL", root[2]["name"], root[2]["type"], -1);
+                        mpSymbol.insert( root[2]["name"].asString() );
+                    }
+                    else {
+                        string err = "Symbol[" + root[2]["name"].asString() + "] Redefined.";
+                        vecError.push_back( err );
+                    }
+                }
+            }
             return true;
         },
         /* 3. D 3 int ID ; */
         [&](syntaxNode& root, int pos){
             ///把ID加入符号表中,并分配地址
+            switch(pos) {
+                case 0: {
+                    root[1]["type"] = "int";
+                } break;
+                case 1: {
+                    root[1]["name"] = root[1].ptrToken->lexData;
+
+                    if ( mpSymbol.find(root[1]["name"].asString()) == mpSymbol.end() ) {
+                        Emit(getLineNum(), "SYMBOL", root[1]["name"], root[1]["type"], -1);
+                        mpSymbol.insert( root[1]["name"].asString() );
+                    }
+                    else {
+                        string err = "Symbol[" + root[1]["name"].asString() + "] Redefined.";
+                        vecError.push_back( err );
+                    }
+                }
+            }
             return true;
         },
         /* 4. S 9 if ( BEp ) then S else S endif */
@@ -323,10 +364,20 @@ vector<Translator::TransFuncType> CLikeTranslator::getTransFunc() {
         /* 7. S 4 ID = CEp ; */
         [&](syntaxNode& root, int pos){
             switch(pos) {
-                case -1: case 0: case 1: break;
+                case -1: case 1: break;
+                case 0: {
+                    root[0]["name"] = root[0].ptrToken->lexData;
+                } break;
                 case 2: {
                     //root["chain"].append(-2);
-                    Emit(getLineNum(), "Assign", root[2]["place"].asString(), -1, root[0].ptrToken->lexData );
+                    if ( mpSymbol.find(root[0]["name"].asString()) == mpSymbol.end() ) {
+                        string err = "Symbol[" + root[0]["name"].asString() + "] Not Found.";
+                        vecError.push_back( err );
+                    }
+                    else {
+                        Emit(getLineNum(), "Assign", root[2]["place"].asString(), -1, root[0]["name"] );
+                    }
+
                 } break;
             }
             return true;
@@ -385,7 +436,7 @@ vector<Translator::TransFuncType> CLikeTranslator::getTransFunc() {
                     root["codebegin"] = root[0]["codebegin"];
                     root["false"] = root[2]["false"];
                     root["true"] = Merge( root[0]["true"], root[2]["true"] );
-                    cout<<"TRUE:"<<root["true"]<<"FALSE:"<<root["false"]<<"CODEBEGIN:"<<root["codebegin"];
+
                 } break;
             }
             return true;
@@ -412,7 +463,7 @@ vector<Translator::TransFuncType> CLikeTranslator::getTransFunc() {
                     root["codebegin"] = root[0]["codebegin"];
                     root["true"] = root[2]["true"];
                     root["false"] = Merge( root[0]["false"], root[2]["false"] );
-                    cout<<"TRUE:"<<root["true"]<<"FALSE:"<<root["false"]<<"CODEBEGIN:"<<root["codebegin"];
+
                 } break;
             }
             return true;
@@ -462,7 +513,7 @@ vector<Translator::TransFuncType> CLikeTranslator::getTransFunc() {
                 case -1: {
                     root["place"] = string("t") + clUtils::itoa( getNewTmp() );
                 } break;
-                case 0: {
+                case 2: {
                     Emit( getLineNum(), "+", root[0]["place"], root[2]["place"], root["place"] );
                 } break;
             }
@@ -474,7 +525,7 @@ vector<Translator::TransFuncType> CLikeTranslator::getTransFunc() {
                 case -1: {
                     root["place"] = string("t") + clUtils::itoa( getNewTmp() );
                 } break;
-                case 0: {
+                case 2: {
                     Emit( getLineNum(), "-", root[0]["place"], root[2]["place"], root["place"] );
                 } break;
             }
@@ -496,7 +547,7 @@ vector<Translator::TransFuncType> CLikeTranslator::getTransFunc() {
                 case -1: {
                     root["place"] = string("t") + clUtils::itoa( getNewTmp() );
                 } break;
-                case 0: {
+                case 2: {
                     Emit( getLineNum(), "*", root[0]["place"], root[2]["place"], root["place"] );
                 } break;
             }
@@ -508,7 +559,7 @@ vector<Translator::TransFuncType> CLikeTranslator::getTransFunc() {
                 case -1: {
                     root["place"] = string("t") + clUtils::itoa( getNewTmp() );
                 } break;
-                case 0: {
+                case 2: {
                     Emit( getLineNum(), "/", root[0]["place"], root[2]["place"], root["place"] );
                 } break;
             }
@@ -519,7 +570,12 @@ vector<Translator::TransFuncType> CLikeTranslator::getTransFunc() {
             switch(pos) {
                 case -1: break;
                 case 0: {
-                    root["place"] = root[0].ptrToken->lexData;
+                    root[0]["name"] = root[0].ptrToken->lexData;
+                    if ( mpSymbol.find( root[0]["name"].asString() ) == mpSymbol.end() ) {
+                        string err = "Symbol[" + root[0]["name"].asString() + "] Not Found.";
+                        vecError.push_back( err );
+                    }
+                    root["place"] = root[0]["name"];
                 } break;
             }
             return true;

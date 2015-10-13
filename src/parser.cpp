@@ -223,22 +223,22 @@ syntaxParser& syntaxParser::showActionGotoTable() {
 
     vector<Term*> termsWithEnd = vecTerm;
     termsWithEnd.push_back(endTermPtr);
-    printf("\t");
+    printf("\t&");
     for(auto ptrTerm : termsWithEnd) {
         ptrTerm->print(false);
-        printf("\t");
+        printf("\t&");
     }
     printf("\n");
     auto& table = ptrAGTable->table;
     for(auto row : table ) {
         int vId = row.first;
-        printf("I%d\t",vId);
+        printf("I%d\t&",vId);
         for(auto ptrTerm : termsWithEnd) {
             Action* action = table.get( vId, ptrTerm );
             if ( NULL != action ) {
                 action->print(false);
             }
-            printf("\t");
+            printf("\t&");
         }
         printf("\n");
     }
@@ -287,13 +287,14 @@ syntaxParser& syntaxParser::runSyntaxAnalyse() {
         if ( NULL == curAction ) {
             ///true 代表解决成功, false 代表解决失败 throw
             if ( false == solveSyntaxException(stkState, stkSyntaxNode, vTokenCnt) ) {
-                printf("\nSyntax Error at topState=%d vTokenCnt = %d\n", topState,vTokenCnt);
+                string errStr = "Error at topState=" +itoa(topState)+ " vTokenCnt = " + itoa(vTokenCnt) + " (" + nextToken->ptrTerm->getString() + ")";
+                vecError.push_back(errStr);
                 throw "Error Can't be solved";
             }
-            vTokenCnt++;
+            //vTokenCnt++;
             continue;
         }
-
+        curAction->print(true);
         switch(curAction->type) {
             case Action::Type::Step: {
                     stkState.push( curAction->toId );
@@ -356,6 +357,7 @@ syntaxParser& syntaxParser::showSyntaxTree() {
         for(auto ptrChild : root->child) {
             dfs(ptrChild);
         }
+        return true;
     };
     dfs(ptrSyntaxTreeRoot);
 
@@ -374,7 +376,11 @@ syntaxParser& syntaxParser::showSyntaxTree() {
             //printf("node%x[label = \"", root);
             fileTreeGV<<"node"<<root<<"[label = \"";
             string & cut = root->ptrToken->ptrTerm->tName;
-            if ( cut == string("{") || cut == string("}") )
+            if ( cut[0] == '{' ||
+                cut[0] == '}' ||
+                cut[0] == '<' ||
+               cut[0] == '>'
+                 )
                 fileTreeGV<<"\\";
             fileTreeGV<<root->ptrToken->ptrTerm->tName<<" ";
             if ( root->ptrToken->lexData != string("_") ) {
@@ -413,33 +419,133 @@ syntaxParser& syntaxParser::showSyntaxTree() {
 
 syntaxParser& syntaxParser::ConstructLR1(istream& grammarIn) {
 
-    destoryAll().
-    inputTerm(grammarIn).
-    showTerm().
-    inputProduction(grammarIn).
-    showProduction().
-    buildStateItems().
-    showStateItems().
-    buildStateSet().
-    showStateSet().
-    buildActionGotoTable().
-    showActionGotoTable().
-    nop();
-
+    try {
+        destoryAll().
+        inputTerm(grammarIn).
+        showTerm().
+        inputProduction(grammarIn).
+        showProduction().
+        buildStateItems().
+        showStateItems().
+        buildStateSet().
+        showStateSet().
+        buildActionGotoTable().
+        showActionGotoTable().
+        nop();
+    }
+    catch(...) {
+    }
     _isLR = true;
-
+    if ( vecError.size() ) {
+        printf("LR Error:\n");
+        _isLR = false;
+        for(auto str : vecError) {
+            cout<<str<<endl;
+        }
+    }
     return *this;
 }
 
 syntaxParser& syntaxParser::ConstructTree(istream& lexIn) {
     if ( false == _isLR ) return *this;
 
-    inputLex(lexIn).
-    runSyntaxAnalyse().
-    showSyntaxTree().
-    nop();
+    for(auto ptrToken : vecToken)
+        delete ptrToken;
+    vecToken.clear();
+    delete ptrSyntaxTreeRoot;
+    ptrSyntaxTreeRoot = NULL;
+
+    vecError.clear();
+
+    try {
+        inputLex(lexIn).
+        runSyntaxAnalyse().
+        showSyntaxTree().
+        nop();
+    }
+    catch(...) {
+
+    }
 
     _isTree = true;
+    if ( vecError.size() ) {
+        printf("Syntax Error:\n");
+        _isTree = false;
+        for(auto str : vecError) {
+            cout<<str<<endl;
+        }
+    }
+
 
     return *this;
+}
+
+bool syntaxParser::solveSyntaxException(stack<int>& stkState, stack<syntaxNode*>& stkSyntaxNode, int& vTokenCnt) {
+    int topState = stkState.top();
+    ///如果对于该状态只有一个 Step 那就做掉, new 一个Token给它
+
+    //assert( mpStateTable.colBegin(topState) != mpStateTable.colEnd() )
+    if ( mpStateTable.has(topState)  ) {
+        auto iter = mpStateTable.colBegin(topState), iend = mpStateTable.colEnd(topState);
+        ///确实找不到的。应该在AGTable中找唯一Action来处理这个问题，然后如果只有一个则做掉，否则给出候选Error
+        vector<Term*> vecStep;
+        int avaCnt = 0;
+        int toId = -1;
+        for( ;iter != iend; iter++) {
+            if( (iter->first)->isTerminal ) {
+                avaCnt ++;
+                vecStep.push_back( iter->first );
+               // stepTerm = iter->first;
+                toId = *mpStateTable.get(topState, iter->first);
+            }
+        }
+        if ( avaCnt == 1 ) {
+            string errStr = "Need Term " + vecStep[0]->getString() + " At token " + itoa( vTokenCnt );
+            vecError.push_back( errStr );
+
+            stkState.push( toId );
+            stkSyntaxNode.push( new syntaxNode( new Token(vecStep[0], string("fixed")) ) );
+            return true;
+        }
+        else if ( avaCnt > 1 ) {
+            ///有好多个步进状态，输出所有状态
+            string step;
+            for( auto ptrTerm : vecStep ) {
+               step += ptrTerm->getString();
+            }
+             string errStr = "[S]Need Term {" + step + "} At token " + itoa( vTokenCnt );
+            vecError.push_back( errStr );
+        }
+    }
+    ///先判一下 AGTable中的Action是唯一的话，就直接做掉。
+    ///否则 多重Step会在之前报错，多重Recur也会报错。
+    ///然后再判 一个Recur多次 下面
+    ///下面在没有直接Step的情况下，判断是否存在 多个Recur
+    {
+        StateSet* ptrState = vecStates[ topState ];
+        vector<Term*> vecRecur;
+        for(auto ptrSEItem : ptrState->collection) {
+            if ( false == ptrSEItem->hasNextSItem() ) {
+                vecRecur.push_back( ptrSEItem->next );
+            }
+        }
+        if ( vecRecur.size() > 1 ) {
+            string step;
+            for( auto ptrTerm : vecRecur ) {
+               step += ptrTerm->getString();
+            }
+             string errStr = "[R]Need Term {" + step + "} At token " + itoa( vTokenCnt );
+            vecError.push_back( errStr );
+        }
+    }
+
+
+    return false;
+}
+
+bool CLikeSyntaxParser::solveSyntaxException(stack<int>& stkState, stack<syntaxNode*>& stkSyntaxNode, int& vTokenCnt) {
+    if ( syntaxParser::solveSyntaxException(stkState, stkSyntaxNode, vTokenCnt) ) return true;
+
+
+    return false;
 }

@@ -1,22 +1,28 @@
 #include "production.h"
 
 void Production::print(int pos, bool breakLine) const{
-    printf("[%d] ",pId);
-    ptrTerm->print(false);
+    cout<<getString(pos);
+    breakLine && printf("\n");
+}
+
+string Production::getString(int pos) const {
+    string ret;
+    ret += "[" + clUtils::itoa(pId) +"]";
+    ret += ptrTerm->getString();
     if ( false == ptrTerm->isTerminal ) {
-        printf(" => ");
+        ret +=" => ";
         int cnt = 0;
         for(auto iPtrTerm : toTerms) {
             if ( cnt == pos ) {
-                printf("* ");
+                ret +="* ";
             }
-            iPtrTerm->print(false);
-            printf(" ");
+            ret += iPtrTerm->getString() + " ";
+
             cnt++;
         }
         if ( cnt == pos ) {
-            printf("* ");
+            ret += "* ";
         }
     }
-    breakLine && printf("\n");
+    return ret;
 }

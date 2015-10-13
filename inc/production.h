@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "term.h"
 #include "stateItem.h"
+#include "clUtils.h"
 
 class Term;
 class Production;
@@ -22,6 +23,7 @@ public:
     vector<StateItem*> vecSItems;
     Production( int _id, Term* _ptr = NULL ): pId(_id), ptrTerm(_ptr) {}
     void print(int pos = -1, bool breakLine = true) const;
+    string getString(int pos = -1) const;
 };
 
 #endif // PRODUCTION_H_INCLUDED

@@ -27,8 +27,17 @@ StateItem* StateExtItem::getNextSItem() const {
 }
 void StateExtItem::print(bool breakLine) const {
     if ( ptrItem ) {
-        ptrItem->print(false);
-        printf("  char"); next->print(false);
+        cout<<getString();
         breakLine && printf("\n");
     }
+}
+
+string StateExtItem::getString() const {
+    string ret;
+    if ( ptrItem ) {
+        ret += ptrItem->getString();
+        ret += "  char";
+        ret += next->getString();
+    }
+    return ret;
 }

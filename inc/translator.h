@@ -23,11 +23,14 @@ public:
 class Translator{
 public:
     typedef function<bool(syntaxNode& root, int pos)> TransFuncType;
-protected:
+///protected:
+public:
     syntaxParser* ptrParser;
     int numLine;
     int numTmp;
     int numLineOffset;
+    vector<string> vecError;
+    set<string> mpSymbol;
     vector<AssembleCode> vecCodes;
     vector<TransFuncType> vecTransFunc;
 public:
@@ -38,7 +41,8 @@ public:
     Translator& init( syntaxParser* _newParser );
     Translator& translate();
 
-protected:
+///protected:
+public:
     ///定义成虚 =0函数，必须派生。
     virtual vector<TransFuncType> getTransFunc() = 0;
     void translateRecur(syntaxNode* root, vector<TransFuncType>& func);

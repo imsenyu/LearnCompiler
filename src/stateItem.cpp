@@ -17,6 +17,13 @@ StateItem* StateItem::getNextSItem() const {
     return ptrPdt->vecSItems[ pos+1 ];
 }
 void StateItem::print(bool breakLine) const {
-    if ( NULL != ptrPdt )
-        ptrPdt->print(pos, breakLine);
+    cout<<getString();
+    breakLine && printf("\n");
+}
+
+string StateItem::getString() const {
+    if ( NULL != ptrPdt ) {
+        return ptrPdt->getString(pos);
+    }
+    else return "";
 }

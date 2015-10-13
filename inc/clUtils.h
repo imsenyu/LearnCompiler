@@ -56,12 +56,12 @@ public:
 
     typename mapCol::iterator colBegin( _Row& row) {
         typename mapRowCol::iterator rter = data.find( row );
-        if ( rter == data.end() ) return rter;
+        if ( rter == data.end() ) return data.begin()->second.end();
         return rter->second.begin();
     }
     typename mapCol::iterator colEnd( _Row& row ) {
         typename mapRowCol::iterator rter = data.find( row );
-        if ( rter == data.end() ) return rter;
+        if ( rter == data.end() ) return data.begin()->second.end();
         return rter->second.end();
     }
 
@@ -82,6 +82,11 @@ public:
         }
         return false;
 
+    }
+    bool has( const _Row& row) {
+        typename mapRowCol::iterator rter = data.find( row );
+        if ( rter == data.end() ) return false;
+        else return true;
     }
     _Ele* get( const _Row& row, const _Col& col) {
         typename mapRowCol::iterator rter = data.find( row );

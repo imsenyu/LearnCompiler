@@ -24,6 +24,7 @@ public:
     int toId;
     Action(Type _type, int _id): type(_type), toId(_id) {}
     void print(bool breakLine = true) const;
+    string getString() const;
 };
 
 class ActionGotoTable {

@@ -1,0 +1,17 @@
+{
+    int a; int b; int c;
+    while ( a<b ) do {
+       a=1;
+        if ( c<d ) then
+           if ( a < b or c<d and e>f ) then {
+             a = b+c*e-f;
+             c = 2;
+           }
+          else
+             b = 2;
+          endif
+         endif
+    }
+}
+
+

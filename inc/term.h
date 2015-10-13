@@ -22,6 +22,7 @@ public:
     Term(string _name = "", bool _terminal = true): tName(_name), isTerminal(_terminal) { }
     Term(istream& in);
     void print(bool breakLine = true) const;
+    string getString() const;
 };
 /*
  * const class Term

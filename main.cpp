@@ -12,12 +12,21 @@ using namespace std;
 
 int main()
 {
-
+    ///TODOS:
+    /// shared_ptr
+    /// solveException 唯一Step /Recur封装
+    /// 整合dfa
+    /// 加注释
     fstream fileSyntax, fileLex;
-    fileSyntax.open("./test/cfg.clike.txt",ios_base::in );
-    fileLex.open("./test/lex.clike.txt", ios_base::in);
+    fileSyntax.open("cfg.txt",ios_base::in );
+    fileLex.open("lex.txt", ios_base::in);
 
-    syntaxParser parser(false);
+    if ( !fileSyntax.is_open() || !fileLex.is_open() ) {
+        printf("cfg.txt As Grammar\nlex.txt As TokenArray\n");
+        exit(-1);
+    }
+
+    CLikeSyntaxParser parser(true);
     parser.
         ConstructLR1(fileSyntax).
         ConstructTree(fileLex).

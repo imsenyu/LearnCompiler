@@ -8,6 +8,10 @@ Term::Term(istream& in) {
     in>>tName>>isTerminal;
 }
 void Term::print(bool breakLine) const {
-    cout<<"["<<tName<<"]";
+    cout<<getString();
     breakLine && printf("\n");
+}
+
+string Term::getString() const {
+    return "["+tName+"]";
 }

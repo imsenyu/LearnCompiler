@@ -1,14 +1,20 @@
 #include "action.h"
 
 void Action::print(bool breakLine) const{
-    switch(type) {
-        case Err: printf("Err"); break;
-        case Acc: printf("Acc"); break;
-        case Step: printf("S%d",toId); break;
-        case Goto: printf("G%d",toId); break;
-        case Recur: printf("R%d",toId); break;
-    }
+    cout<<getString();
     breakLine && printf("\n");
+}
+
+string Action::getString() const {
+    string ret;
+    switch(type) {
+        case Err: return "Err";
+        case Acc: return "Acc";
+        case Step: return "S"+clUtils::itoa(toId);
+        case Goto: return "G"+clUtils::itoa(toId);
+        case Recur: return "R"+clUtils::itoa(toId);
+    }
+    return "";
 }
 
 bool ActionGotoTable::build() {

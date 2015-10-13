@@ -14,7 +14,7 @@
 using namespace clUtils;
 
 class syntaxParser;
-
+class CLikeSyntaxParser;
 /*
  * class syntaxParser
  * description: 通用语法分析程序，完成LR1 ActionGoto表构造，语法规约，语法树生成
@@ -48,14 +48,14 @@ private:
     bool _isTree;
 public:
     syntaxParser(bool _debug = true):_isDebug(_debug), ptrAGTable(NULL), ptrSyntaxTreeRoot(NULL) { }
-
-protected:
+//protected
+public:
     ///所有数据存储使用vector
     ///!!!考虑使用C++11 Move语义后引入 vector< unique_ptr<Term*> > 这个样子
     vector<Term*> vecTerm;
     vector<Production*> vecATerm;
     vector<StateSet*> vecStates;
-
+    vector<string> vecError;
     ///供数据查找
     map<string, Term*> mpTerm;  ///Term查找
     D2Map<int,Term*,int> mpStateTable;  /// StateSet的int编号的 关于Term*的转移表
@@ -119,7 +119,7 @@ public:
     inline void nop() {}
     syntaxParser& ConstructLR1(istream& grammarIn);
     syntaxParser& ConstructTree(istream& lexIn);
-    virtual bool solveSyntaxException(stack<int>& stkState, stack<syntaxNode*>& stkSyntaxNode, int& vTokenCnt) { return false; }
+    virtual bool solveSyntaxException(stack<int>& stkState, stack<syntaxNode*>& stkSyntaxNode, int& vTokenCnt);
     syntaxNode* getSyntaxTree() const{
         return _isTree ? ptrSyntaxTreeRoot : NULL;
     }
@@ -132,6 +132,12 @@ public:
     inline bool getIsTree() const { return _isTree; }
     inline bool getIsLR() const { return _isLR; }
     //syntaxParse* buildStateTable
+};
+
+class CLikeSyntaxParser : public syntaxParser {
+public:
+    CLikeSyntaxParser(bool _debug = false):syntaxParser(_debug) {}
+    bool solveSyntaxException(stack<int>& stkState, stack<syntaxNode*>& stkSyntaxNode, int& vTokenCnt);
 };
 
 #endif // PARSER_H_INCLUDED

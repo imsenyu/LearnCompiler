@@ -13,11 +13,11 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-std=c++11" />
-					<Add option="-g" />
 					<Add directory="./inc" />
 				</Compiler>
 				<Linker>
-					<Add library="./lib/lib_json.a" />
+					<Add option="-s" />
+					<Add library=".\lib\lib_json.a" />
 					<Add directory="./lib" />
 				</Linker>
 			</Target>
@@ -33,7 +33,7 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
-					<Add library="./lib/lib_json.a" />
+					<Add library=".\lib\lib_json.a" />
 					<Add directory="./lib" />
 				</Linker>
 			</Target>
