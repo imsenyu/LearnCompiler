@@ -1,0 +1,37 @@
+# depslib dependency file v1.0
+1415237836 source:e:\workspace\git\homework\src\lex\main.cpp
+	<cstdio>
+	<iostream>
+	<vector>
+	<map>
+	<string>
+
+1436437143 source:e:\workspace\git\homework\compile\lex\main.cpp
+	"dfa.h"
+	<fstream>
+
+1436265835 e:\workspace\git\homework\compile\lex\dfs.h
+	<cstdio>
+	<iostream>
+	<vector>
+	<map>
+	<string>
+	<fstream>
+
+1436265875 source:e:\workspace\git\homework\compile\lex\dfs.cpp
+	"dfs.h"
+
+1436275420 source:e:\workspace\git\homework\compile\lex\dfa.cpp
+	"dfa.h"
+	<sstream>
+
+1436316771 e:\workspace\git\homework\compile\lex\dfa.h
+	<cstdio>
+	<iostream>
+	<vector>
+	<map>
+	<string>
+	<fstream>
+	<sstream>
+	<algorithm>
+

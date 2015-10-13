@@ -1,0 +1,16 @@
+{
+    int a; int b; int c;
+    while ( a<b ) do
+        if ( c<d ) then
+            c = 3;
+        endif
+
+    if ( a < b or c<d and e>f ) then {
+         a = b+c*e-f;
+    }
+    else
+        b = 2;
+    endif
+
+}
+

@@ -1,10 +1,16 @@
 Homework
 ========
 
-Branch:
+## 目录结构
+```
 
-- Compile
-	- Lex 一个基于DFA的词法分析器 OK
-	- Syntax 基于LR(1)的语法分析器 PENDING
-- Cpp
-- AI
+    ./Compiler2014   
+		《编译原理》课程时完成的简陋的词法分析其和LR0语法分析
+  
+    ./Compiler2015
+		《编译原理课程设计》时完成的
+		- 词法分析器（复用Compiler2014）
+		- LR1语法分析器
+		- 基于回填拉链的语法树语义分析器
+```
+
